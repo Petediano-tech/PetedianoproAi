@@ -7,13 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Film, Sparkles, Loader2, Palette, Drama, Mic, Eye, Move, Download } from "lucide-react";
+import { Film, Sparkles, Loader2, Palette, Drama, Mic, Eye, Move, Download, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
-import { generateAnimationConcept, type GenerateAnimationConceptInput, type GenerateAnimationConceptOutput } from '@/ai/flows/generate-animation-concept';
+import { generateAnimationConcept, type GenerateAnimationConceptInput, type GenerateAnimationConceptOutput, type Keyframe } from '@/ai/flows/generate-animation-concept';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
 import Link from 'next/link';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function AnimationGeneratorPage() {
   const [prompt, setPrompt] = useState<string>("");
@@ -52,7 +53,7 @@ export default function AnimationGeneratorPage() {
     
     const progressInterval = setInterval(() => {
         setProgressValue(prev => Math.min(prev + 5, 90));
-    }, 700);
+    }, 1200); // Slower interval as image generation can take time
 
     try {
       const input: GenerateAnimationConceptInput = { prompt, characterDescription };
@@ -77,6 +78,8 @@ export default function AnimationGeneratorPage() {
       return;
     }
     try {
+      // Filter out large image data URIs if they cause issues, or keep them.
+      // For now, keeping them as they are part of the concept.
       const jsonString = JSON.stringify(generatedConcept, null, 2);
       const blob = new Blob([jsonString], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -102,7 +105,7 @@ export default function AnimationGeneratorPage() {
           <CardTitle className="font-headline text-3xl text-primary flex items-center">
             <Film className="mr-3 h-8 w-8" /> AI Animation Concept Generator
           </CardTitle>
-          <CardDescription>Describe your animation idea, and AI will generate a character visual and a storyboard concept including mouth, head, eye, and gesture descriptions.</CardDescription>
+          <CardDescription>Describe your animation idea. AI will generate a character design note, a summary, and a storyboard concept with images for the first few keyframes, including mouth, head, eye, and gesture descriptions.</CardDescription>
         </CardHeader>
       </Card>
 
@@ -136,6 +139,13 @@ export default function AnimationGeneratorPage() {
               <Sparkles className="mr-2 h-5 w-5" /> {isLoading ? "Generating Concept..." : "Generate Concept"}
             </Button>
             {isLoading && <Progress value={progressValue} className="w-full mt-2" />}
+             <Alert variant="default" className="mt-4">
+              <ImageIcon className="h-4 w-4" />
+              <AlertTitle>Note on Animation</AlertTitle>
+              <AlertDescription>
+                This tool generates a detailed animation *concept* with static images for keyframes. It does not produce a playable video animation.
+              </AlertDescription>
+            </Alert>
           </CardContent>
         </Card>
 
@@ -148,7 +158,7 @@ export default function AnimationGeneratorPage() {
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                 <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
                 <p className="text-lg">AI is bringing your animation idea to life...</p>
-                <p className="text-sm">This might take a few moments.</p>
+                <p className="text-sm">This might take a few moments, especially with image generation.</p>
               </div>
             )}
             {!isLoading && !generatedConcept && (
@@ -164,13 +174,10 @@ export default function AnimationGeneratorPage() {
                 
                 <Card>
                     <CardHeader>
-                        <CardTitle className="font-headline text-lg flex items-center"><Palette className="mr-2 h-5 w-5 text-primary"/>Character Visual</CardTitle>
+                        <CardTitle className="font-headline text-lg flex items-center"><Palette className="mr-2 h-5 w-5 text-primary"/>Character Design Notes</CardTitle>
                     </CardHeader>
-                    <CardContent className="text-center">
-                        {generatedConcept.characterImageUrl && (
-                            <Image src={generatedConcept.characterImageUrl} alt="Generated Character" width={300} height={300} className="mx-auto rounded-lg border shadow-md object-contain max-h-[300px]" data-ai-hint="animated character concept" />
-                        )}
-                        <p className="text-sm text-muted-foreground mt-2">{generatedConcept.characterDesignNotes}</p>
+                    <CardContent>
+                         <p className="text-sm text-foreground/80">{generatedConcept.characterDesignNotes}</p>
                     </CardContent>
                 </Card>
 
@@ -186,18 +193,28 @@ export default function AnimationGeneratorPage() {
                 <div>
                   <h3 className="font-headline text-xl mb-3 text-primary">Storyboard / Keyframes</h3>
                   <div className="space-y-4">
-                    {generatedConcept.storyboard.map((frame, index) => (
-                      <Card key={index} className="bg-secondary/20">
+                    {generatedConcept.storyboard.map((frame: Keyframe, index: number) => (
+                      <Card key={index} className="bg-card border shadow-sm">
                         <CardHeader>
-                          <CardTitle className="text-base font-semibold">Keyframe {index + 1} (Time: {frame.timecode})</CardTitle>
+                          <CardTitle className="text-lg font-semibold">Keyframe {index + 1} (Time: {frame.timecode})</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-2 text-sm">
-                          <p><Drama className="inline h-4 w-4 mr-1 text-accent"/> <strong>Action:</strong> {frame.actionDescription}</p>
-                          {frame.dialogue && <p><Mic className="inline h-4 w-4 mr-1 text-accent"/> <strong>Dialogue:</strong> "{frame.dialogue}"</p>}
-                          {frame.mouthMovement && <p><strong>Mouth:</strong> {frame.mouthMovement}</p>}
-                          {frame.headMovement && <p><strong>Head:</strong> {frame.headMovement}</p>}
-                          {frame.eyeState && <p><Eye className="inline h-4 w-4 mr-1 text-accent"/> <strong>Eyes:</strong> {frame.eyeState}</p>}
-                          {frame.gesture && <p><Move className="inline h-4 w-4 mr-1 text-accent"/> <strong>Gesture:</strong> {frame.gesture}</p>}
+                        <CardContent className="space-y-3">
+                          {frame.imageUrl && (
+                            <div className="mb-3 border rounded-md overflow-hidden shadow-inner">
+                              <Image src={frame.imageUrl} alt={`Visual for keyframe ${index + 1}`} width={400} height={225} className="mx-auto object-contain max-h-[225px] w-full" data-ai-hint="animation keyframe character" />
+                            </div>
+                          )}
+                          {!frame.imageUrl && index < 3 && (
+                            <div className="mb-3 p-4 text-sm text-muted-foreground bg-muted rounded-md text-center">
+                                Image generation skipped or failed for this keyframe.
+                            </div>
+                          )}
+                          <p className="text-sm"><Drama className="inline h-4 w-4 mr-1 text-accent"/> <strong>Action:</strong> {frame.actionDescription}</p>
+                          {frame.dialogue && <p className="text-sm"><Mic className="inline h-4 w-4 mr-1 text-accent"/> <strong>Dialogue:</strong> "{frame.dialogue}"</p>}
+                          {frame.mouthMovement && <p className="text-xs"><strong>Mouth:</strong> {frame.mouthMovement}</p>}
+                          {frame.headMovement && <p className="text-xs"><strong>Head:</strong> {frame.headMovement}</p>}
+                          {frame.eyeState && <p className="text-xs"><Eye className="inline h-3 w-3 mr-1 text-accent"/> <strong>Eyes:</strong> {frame.eyeState}</p>}
+                          {frame.gesture && <p className="text-xs"><Move className="inline h-3 w-3 mr-1 text-accent"/> <strong>Gesture:</strong> {frame.gesture}</p>}
                         </CardContent>
                       </Card>
                     ))}
@@ -217,3 +234,4 @@ export default function AnimationGeneratorPage() {
     </div>
   );
 }
+
