@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Sparkles, Edit3, Bot, FileText, ImageIcon } from "lucide-react";
@@ -11,31 +12,36 @@ const features = [
     icon: <Edit3 className="h-8 w-8 text-primary" />,
     title: "AI Photo Editor",
     description: "Enhance, beautify, and transform your photos with powerful AI tools.",
-    link: "/photo-editor"
+    link: "/photo-editor",
+    actionText: "Edit Your Photos"
   },
   {
     icon: <Sparkles className="h-8 w-8 text-primary" />,
     title: "AI Content Generation",
     description: "Create original stories, quotes, and more with creative AI assistance.",
-    link: "/content-generator/quotes"
+    link: "/content-generator/quotes",
+    actionText: "Create Content"
   },
   {
     icon: <ImageIcon className="h-8 w-8 text-primary" />,
     title: "AI Picture Generator",
     description: "Generate stunning visuals, logos, and social media posts from text.",
-    link: "/picture-generator"
+    link: "/picture-generator",
+    actionText: "Generate Images"
   },
   {
     icon: <FileText className="h-8 w-8 text-primary" />,
     title: "AI File Analyzer",
     description: "Understand your files better with AI-powered analysis and text extraction.",
-    link: "/file-analyzer"
+    link: "/file-analyzer",
+    actionText: "Analyze Files"
   },
   {
     icon: <Bot className="h-8 w-8 text-primary" />,
     title: "PeteAI Assistant",
     description: "Your personal AI brainstormer and helper for various tasks.",
-    link: "/assistant"
+    link: "/assistant",
+    actionText: "Chat with PeteAI"
   },
 ];
 
@@ -108,7 +114,7 @@ export default function HomePage() {
                   <CardFooter className="justify-center">
                     <Link href={feature.link || '/dashboard'}>
                       <Button variant="link" className="text-primary">
-                        Learn More <ArrowRight className="ml-1 h-4 w-4" />
+                        {feature.actionText} <ArrowRight className="ml-1 h-4 w-4" />
                       </Button>
                     </Link>
                   </CardFooter>
