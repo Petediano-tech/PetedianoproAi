@@ -1,0 +1,132 @@
+"use client";
+import { useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Sparkles, Heart, ThumbsDown, MessageCircle, Share2, Download } from "lucide-react";
+import Image from "next/image";
+import { getMotivationalQuote, type GetMotivationalQuoteInput, type GetMotivationalQuoteOutput } from '@/ai/flows/get-motivational-quote';
+import { toast } from '@/hooks/use-toast';
+import { Progress } from '@/components/ui/progress';
+
+export default function QuotesGeneratorPage() {
+  const [topic, setTopic] = useState<string>("");
+  const [textOnly, setTextOnly] = useState<boolean>(true);
+  const [generatedQuote, setGeneratedQuote] = useState<string | null>(null);
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+
+  const handleGenerateQuote = async () => {
+    setIsLoading(true);
+    setProgress(30);
+    setGeneratedQuote(null);
+    setGeneratedImage(null);
+    try {
+      const input: GetMotivationalQuoteInput = { topic: topic || "general inspiration", textOnly };
+      setTimeout(() => setProgress(60), 500);
+      const result: GetMotivationalQuoteOutput = await getMotivationalQuote(input);
+      setTimeout(() => setProgress(100), 1000);
+      setGeneratedQuote(result.quote);
+      if (result.imageUrl) {
+        setGeneratedImage(result.imageUrl);
+      }
+      toast({ title: "Success", description: "Quote generated successfully!" });
+    } catch (error) {
+      console.error("Error generating quote:", error);
+      toast({ title: "Error", description: "Failed to generate quote. " + (error as Error).message, variant: "destructive" });
+       setProgress(0);
+    } finally {
+      setIsLoading(false);
+      setTimeout(() => setProgress(0), 1500);
+    }
+  };
+
+  return (
+    <div className="container mx-auto py-8">
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="font-headline text-3xl text-primary">AI Quote Generator</CardTitle>
+          <CardDescription>Generate motivational or funny quotes. Choose to get text only or a quote on an original image.</CardDescription>
+        </CardHeader>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle className="font-headline text-xl">Options</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <Label htmlFor="topic" className="block mb-2 font-medium">Topic (Optional)</Label>
+              <Input 
+                id="topic" 
+                placeholder="e.g., Success, Humor, Life" 
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="text-only-switch" 
+                checked={textOnly}
+                onCheckedChange={setTextOnly}
+              />
+              <Label htmlFor="text-only-switch">Text Only (No Image)</Label>
+            </div>
+            <Button onClick={handleGenerateQuote} disabled={isLoading} className="w-full">
+              <Sparkles className="mr-2 h-5 w-5" /> {isLoading ? "Generating..." : "Generate Quote"}
+            </Button>
+             {isLoading && <Progress value={progress} className="w-full mt-2" />}
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="font-headline text-xl">Generated Quote</CardTitle>
+          </CardHeader>
+          <CardContent className="min-h-[300px] flex flex-col items-center justify-center">
+            {isLoading && !generatedQuote && (
+                <div className="text-center text-muted-foreground">
+                    <Sparkles className="mx-auto h-12 w-12 mb-2 animate-pulse text-primary" />
+                    <p>Generating your quote...</p>
+                </div>
+            )}
+            {!isLoading && !generatedQuote && (
+              <p className="text-muted-foreground">Your generated quote will appear here.</p>
+            )}
+            {generatedQuote && (
+              <div className="w-full text-center">
+                {generatedImage && !textOnly ? (
+                  <div className="relative aspect-video w-full max-w-lg mx-auto rounded-lg overflow-hidden border shadow-lg">
+                    <Image src={generatedImage} alt="Generated quote image" layout="fill" objectFit="cover" data-ai-hint="quote background" />
+                    <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/50">
+                      <p className="font-headline text-2xl md:text-3xl text-white text-center" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.7)' }}>
+                        &ldquo;{generatedQuote}&rdquo;
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <blockquote className="text-2xl md:text-3xl lg:text-4xl font-body italic p-6 border-l-4 border-primary bg-secondary/30 rounded-r-lg">
+                    &ldquo;{generatedQuote}&rdquo;
+                  </blockquote>
+                )}
+                <div className="mt-6 flex flex-wrap gap-2 justify-center">
+                  <Button variant="ghost" size="icon"><Heart className="h-5 w-5 text-red-500" /></Button>
+                  <Button variant="ghost" size="icon"><ThumbsDown className="h-5 w-5" /></Button>
+                  <Button variant="ghost" size="icon"><MessageCircle className="h-5 w-5" /></Button>
+                  <Button variant="ghost" size="icon"><Share2 className="h-5 w-5" /></Button>
+                  {generatedImage && !textOnly && <Button><Download className="mr-2 h-5 w-5" /> Download Image</Button>}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
