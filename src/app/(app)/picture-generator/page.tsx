@@ -1,3 +1,4 @@
+
 "use client";
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
@@ -6,11 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ImageIcon, Sparkles, Download, Heart, ThumbsDown, MessageCircle, Share2, Loader2 } from "lucide-react";
+import { ImageIcon, Sparkles, Download, Heart, ThumbsDown, Share2, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { generateOriginalPictures, type GenerateOriginalPicturesInput, type GenerateOriginalPicturesOutput } from '@/ai/flows/generate-original-pictures';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 
 const imageTypes = ["picture", "wallpaper", "logo", "flyer", "collage", "social media post"];
 const aspectRatios = ["16:9", "1:1", "4:5", "9:16", "4:3", "3:4"];
@@ -18,7 +20,7 @@ const fonts = ["Arial", "Verdana", "Times New Roman", "Courier New", "Belleza", 
 
 
 export default function PictureGeneratorPage() {
-  const [prompt, setPrompt] = useState<string>("");
+  const [promptText, setPromptText] = useState<string>(""); // Renamed from prompt to avoid conflict with AI flow input
   const [imageType, setImageType] = useState<string>(imageTypes[0]);
   const [text, setText] = useState<string>("");
   const [font, setFont] = useState<string>(fonts[0]);
@@ -28,8 +30,11 @@ export default function PictureGeneratorPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
 
+  const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
+  const [feedbackText, setFeedbackText] = useState("");
+
   const handleGeneratePicture = async () => {
-    if (!prompt) {
+    if (!promptText) {
       toast({ title: "Error", description: "Please enter a prompt for the image.", variant: "destructive" });
       return;
     }
@@ -38,8 +43,8 @@ export default function PictureGeneratorPage() {
     setGeneratedImageUrl(null);
     try {
       const input: GenerateOriginalPicturesInput = {
-        type: imageType as any, // Assuming enum matches string array
-        prompt,
+        type: imageType as any, 
+        prompt: promptText, // Use renamed state variable
         text: text || undefined,
         font: text ? font : undefined,
         aspectRatio: aspectRatio || undefined,
@@ -59,6 +64,43 @@ export default function PictureGeneratorPage() {
     }
   };
 
+  const handleShare = async () => {
+    if (!generatedImageUrl || !promptText) {
+        toast({ title: "Nothing to share", description: "Please generate an image first.", variant: "destructive" });
+        return;
+    }
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'AI Generated Picture by Petediano Pro',
+                text: `Check out this image I generated with Petediano Pro! Prompt: "${promptText}"`,
+                url: generatedImageUrl, // Sharing data URI might be an issue on some platforms, consider converting to blob if problems arise.
+            });
+            toast({ title: "Shared successfully!"});
+        } catch (error) {
+            console.error('Error sharing:', error);
+            // Check if the error is due to user cancellation
+            if ((error as DOMException).name !== 'AbortError') {
+              toast({ title: "Sharing failed", description: (error as Error).message, variant: "destructive" });
+            }
+        }
+    } else {
+        try {
+            await navigator.clipboard.writeText(generatedImageUrl);
+            toast({ title: "Link Copied!", description: "Image URL copied to clipboard as sharing is not available."});
+        } catch (err) {
+            toast({ title: "Sharing not available", description: "Web Share API not supported and could not copy to clipboard.", variant: "destructive" });
+        }
+    }
+  };
+
+  const handleSendFeedback = () => {
+    console.log("Feedback received:", feedbackText);
+    toast({ title: "Feedback Sent", description: "Thank you for your feedback!" });
+    setFeedbackText("");
+    setIsFeedbackDialogOpen(false);
+  };
+
   return (
     <div className="container mx-auto py-8">
       <Card className="mb-8">
@@ -75,8 +117,8 @@ export default function PictureGeneratorPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="prompt">Image Prompt</Label>
-              <Textarea id="prompt" placeholder="e.g., A futuristic city skyline at sunset" value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={4} />
+              <Label htmlFor="promptText">Image Prompt</Label>
+              <Textarea id="promptText" placeholder="e.g., A futuristic city skyline at sunset" value={promptText} onChange={(e) => setPromptText(e.target.value)} rows={4} />
             </div>
             <div>
               <Label htmlFor="imageType">Image Type</Label>
@@ -105,7 +147,7 @@ export default function PictureGeneratorPage() {
                     </div>
                 )}
             </div>
-            <Button onClick={handleGeneratePicture} disabled={isLoading || !prompt} className="w-full">
+            <Button onClick={handleGeneratePicture} disabled={isLoading || !promptText} className="w-full">
               <Sparkles className="mr-2 h-5 w-5" /> {isLoading ? "Generating..." : "Generate Picture"}
             </Button>
             {isLoading && <Progress value={progress} className="w-full mt-2" />}
@@ -136,9 +178,38 @@ export default function PictureGeneratorPage() {
                 </div>
                 <div className="flex flex-wrap gap-2 justify-center">
                   <Button variant="ghost" size="icon"><Heart className="h-5 w-5 text-red-500" /></Button>
-                  <Button variant="ghost" size="icon"><ThumbsDown className="h-5 w-5" /></Button>
-                  <Button variant="ghost" size="icon"><MessageCircle className="h-5 w-5" /></Button>
-                  <Button variant="ghost" size="icon"><Share2 className="h-5 w-5" /></Button>
+                  
+                  <Dialog open={isFeedbackDialogOpen} onOpenChange={setIsFeedbackDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <ThumbsDown className="h-5 w-5" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Provide Feedback</DialogTitle>
+                        <DialogDescription>
+                          We're sorry you didn't like the image. Please tell us what went wrong or how we can improve.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="py-4">
+                        <Textarea
+                          placeholder="Your feedback..."
+                          value={feedbackText}
+                          onChange={(e) => setFeedbackText(e.target.value)}
+                          rows={4}
+                        />
+                      </div>
+                      <DialogFooter>
+                         <DialogClose asChild>
+                           <Button variant="outline">Cancel</Button>
+                         </DialogClose>
+                        <Button onClick={handleSendFeedback}>Send Feedback</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+
+                  <Button variant="ghost" size="icon" onClick={handleShare}><Share2 className="h-5 w-5" /></Button>
                   <Button asChild>
                     <a href={generatedImageUrl} download={`petediano_pro_art_${Date.now()}.png`}>
                       <Download className="mr-2 h-5 w-5" /> Download
@@ -153,3 +224,4 @@ export default function PictureGeneratorPage() {
     </div>
   );
 }
+
