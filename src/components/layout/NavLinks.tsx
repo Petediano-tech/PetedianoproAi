@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -89,7 +88,7 @@ export function NavLinks() {
               <ul className="pl-4 group-data-[collapsible=icon]:pl-0">
                 {item.subItems.map((subItem) => (
                   <li key={subItem.href}>
-                    <Link href={subItem.href} legacyBehavior passHref>
+                    <Link href={subItem.href}>
                       <SidebarMenuButton
                         asChild
                         variant="default"
@@ -113,7 +112,7 @@ export function NavLinks() {
           );
         }
         return (
-          <Link href={item.href} key={item.href} legacyBehavior passHref>
+          <Link href={item.href} key={item.href}>
             <SidebarMenuButton
               asChild
               variant="default"
