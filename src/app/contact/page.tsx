@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, MessageCircle, PhoneCall, Share2 } from "lucide-react"; // Using MessageCircle for WhatsApp/SMS
@@ -58,9 +59,9 @@ export default function ContactPage() {
                 {contactMethods.map((method) => (
                   <div key={method.label} className="flex items-center gap-4 p-4 border rounded-lg bg-secondary/20 hover:bg-secondary/40 transition-colors">
                     {method.icon}
-                    <div>
+                    <div className="min-w-0 flex-1"> {/* Added min-w-0 and flex-1 here for better flex behavior */}
                       <p className="font-semibold">{method.label}</p>
-                      <Link href={method.href} target="_blank" rel="noopener noreferrer" className="text-foreground hover:underline">
+                      <Link href={method.href} target="_blank" rel="noopener noreferrer" className="text-foreground hover:underline break-all">
                         {method.value}
                       </Link>
                     </div>
