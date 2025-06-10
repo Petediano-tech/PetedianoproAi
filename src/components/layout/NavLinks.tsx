@@ -17,7 +17,22 @@ import {
   HelpCircle,
   Phone,
   Mail,
-  Film, // Added Film icon
+  Film,
+  Video,
+  Newspaper,
+  Presentation,
+  Share2 as ShareIcon, // Renamed to avoid conflict
+  Music2,
+  Maximize,
+  Scissors,
+  ScanSearch,
+  FileSignature,
+  Briefcase,
+  Layers,
+  Palette,
+  Users,
+  Brain,
+  Lightbulb
 } from 'lucide-react';
 import { SidebarMenuButton } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
@@ -31,13 +46,44 @@ const navItems = [
     subItems: [
       { href: '/content-generator/quotes', label: 'Quotes', icon: MessageSquare },
       { href: '/content-generator/stories', label: 'Stories', icon: FileText },
+      { href: '/content-generator/video-scripts', label: 'Video Scripts', icon: Video },
+      { href: '/content-generator/blog-posts', label: 'Blog Posts', icon: Newspaper },
+      { href: '/content-generator/presentations', label: 'Presentations', icon: Presentation },
+      { href: '/content-generator/social-media-plans', label: 'Social Media Plans', icon: ShareIcon },
     ],
   },
   { href: '/picture-generator', label: 'Picture Generator', icon: ImageIcon },
-  { href: '/animation-generator', label: 'Animation Generator', icon: Film }, // Added Animation Generator
+  { href: '/animation-generator', label: 'Animation Generator', icon: Film },
+  {
+    label: 'Media Utilities',
+    icon: Scissors, // Using Scissors as a general "tools" icon
+    subItems: [
+      { href: '/media-utilities/image-upscaler', label: 'Image Upscaler', icon: Maximize },
+      { href: '/media-utilities/advanced-bg-remover', label: 'Advanced BG Remover', icon: Scissors },
+      { href: '/media-utilities/object-remover', label: 'Object Remover', icon: ScanSearch }, // Icon can be improved
+      { href: '/media-utilities/document-summarizer', label: 'Doc Summarizer', icon: FileSignature },
+      { href: '/media-utilities/music-suggester', label: 'Music Suggester', icon: Music2 },
+    ],
+  },
   { href: '/file-analyzer', label: 'File Analyzer', icon: FileText },
   { href: '/assistant', label: 'PeteAI Assistant', icon: Bot },
-  // { href: '/messaging', label: 'Messaging', icon: MessageSquare }, // Complex, placeholder for now
+  {
+    label: 'Specialized AI',
+    icon: Brain,
+    subItems: [
+      { href: '/specialized-ai/character-persona', label: 'Character Persona', icon: Users },
+      { href: '/specialized-ai/what-if-scenario', label: '"What If" Scenarios', icon: Lightbulb },
+    ],
+  },
+  {
+    label: 'Workflow Tools',
+    icon: Briefcase,
+    subItems: [
+      { href: '/workflow/project-workspace', label: 'Project Workspace', icon: Briefcase },
+      { href: '/workflow/batch-processing', label: 'Batch Processing (VIP)', icon: Layers },
+      { href: '/workflow/brand-kit', label: 'Brand Kit (VIP)', icon: Palette },
+    ],
+  },
   { type: 'separator' },
   { href: '/settings', label: 'Settings', icon: Settings },
   { href: '/vip', label: 'VIP', icon: DollarSign },
@@ -57,13 +103,18 @@ export function NavLinks() {
           return <div key={`sep-${index}`} className="my-2 border-t border-sidebar-border mx-2" />;
         }
         if (item.subItems) {
+          // Check if any sub-item is active to highlight the parent group label
+          const isGroupActive = item.subItems.some(subItem => pathname.startsWith(subItem.href));
           return (
             <div key={item.label} className="px-2">
-              <div className="flex items-center gap-2 py-2 text-sm font-medium text-sidebar-foreground/70">
-                <item.icon className="h-4 w-4" />
+              <div className={cn(
+                  "flex items-center gap-2 py-2 text-sm font-medium text-sidebar-foreground/70 group-data-[collapsible=icon]:justify-center",
+                  isGroupActive && "text-sidebar-primary"
+                )}>
+                <item.icon className={cn("h-4 w-4", isGroupActive && "text-sidebar-primary")} />
                 <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
               </div>
-              <ul className="pl-4">
+              <ul className="pl-4 group-data-[collapsible=icon]:pl-0">
                 {item.subItems.map((subItem) => (
                   <li key={subItem.href}>
                     <Link href={subItem.href} legacyBehavior passHref>
@@ -78,7 +129,7 @@ export function NavLinks() {
                         tooltip={{ children: subItem.label }}
                       >
                         <a>
-                          <subItem.icon className="mr-2 h-4 w-4" />
+                          <subItem.icon className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
                           <span className="group-data-[collapsible=icon]:hidden">{subItem.label}</span>
                         </a>
                       </SidebarMenuButton>
@@ -101,7 +152,7 @@ export function NavLinks() {
               tooltip={{ children: item.label }}
             >
               <a>
-                <item.icon className="mr-2 h-4 w-4" />
+                <item.icon className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
                 <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
               </a>
             </SidebarMenuButton>
@@ -111,3 +162,4 @@ export function NavLinks() {
     </>
   );
 }
+

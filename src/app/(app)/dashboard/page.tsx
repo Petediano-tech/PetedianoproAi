@@ -2,16 +2,49 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, Edit3, Sparkles, ImageIcon, FileText, Bot, MessageSquare, Settings, DollarSign, Film } from "lucide-react";
+import { 
+    ArrowRight, Edit3, Sparkles, ImageIcon, FileText, Bot, MessageSquare, 
+    Settings, DollarSign, Film, Video, Newspaper, Presentation, Share2 as ShareIcon, 
+    Music2, Maximize, Scissors, ScanSearch, FileSignature, Briefcase, Layers, 
+    Palette as BrandPalette, Users, Brain, Lightbulb 
+} from "lucide-react";
 
 const mainFeatures = [
   { title: "AI Photo Editor", description: "Enhance and edit your photos.", icon: Edit3, href: "/photo-editor" },
-  { title: "Content Generation", description: "Create quotes and stories.", icon: Sparkles, href: "/content-generator/quotes" },
-  { title: "Picture Generator", description: "Generate unique images.", icon: ImageIcon, href: "/picture-generator" },
+  { title: "AI Picture Generator", description: "Generate unique images.", icon: ImageIcon, href: "/picture-generator" },
   { title: "Animation Generator", description: "Create animation concepts.", icon: Film, href: "/animation-generator" },
   { title: "File Analyzer", description: "Analyze uploaded files.", icon: FileText, href: "/file-analyzer" },
   { title: "PeteAI Assistant", description: "Your AI-powered assistant.", icon: Bot, href: "/assistant" },
 ];
+
+const contentGenerationFeatures = [
+  { title: "Quotes Generator", description: "Create motivational quotes.", icon: MessageSquare, href: "/content-generator/quotes" },
+  { title: "Stories Generator", description: "Develop long-form stories.", icon: FileText, href: "/content-generator/stories" },
+  { title: "Video Script Generator", description: "Draft scripts for videos.", icon: Video, href: "/content-generator/video-scripts" },
+  { title: "Blog Post Writer", description: "Generate article drafts.", icon: Newspaper, href: "/content-generator/blog-posts" },
+  { title: "Presentation Generator", description: "Outline slide presentations.", icon: Presentation, href: "/content-generator/presentations" },
+  { title: "Social Media Planner", description: "Plan social media campaigns.", icon: ShareIcon, href: "/content-generator/social-media-plans" },
+];
+
+const mediaUtilitiesFeatures = [
+    { title: "Image Upscaler", description: "Increase image resolution.", icon: Maximize, href: "/media-utilities/image-upscaler"},
+    { title: "Advanced BG Remover", description: "Refined background removal.", icon: Scissors, href: "/media-utilities/advanced-bg-remover"},
+    { title: "Object Remover", description: "Remove objects from images.", icon: ScanSearch, href: "/media-utilities/object-remover"},
+    { title: "Document Summarizer", description: "Summarize text documents.", icon: FileSignature, href: "/media-utilities/document-summarizer"},
+    { title: "Music Suggester", description: "Find music for projects.", icon: Music2, href: "/media-utilities/music-suggester"},
+];
+
+const specializedAIFeatures = [
+    { title: "Character Persona Gen", description: "Develop character profiles.", icon: Users, href: "/specialized-ai/character-persona"},
+    { title: '"What If" Scenarios', description: "Explore alternative outcomes.", icon: Lightbulb, href: "/specialized-ai/what-if-scenario"},
+];
+
+const workflowToolsFeatures = [
+    { title: "Project Workspace", description: "Organize your creations.", icon: Briefcase, href: "/workflow/project-workspace"},
+    { title: "Batch Processing (VIP)", description: "Process multiple items.", icon: Layers, href: "/workflow/batch-processing"},
+    { title: "Brand Kit (VIP)", description: "Manage brand assets.", icon: BrandPalette, href: "/workflow/brand-kit"},
+];
+
 
 // Dummy user data
 const user = {
@@ -19,6 +52,14 @@ const user = {
 };
 
 export default function DashboardPage() {
+  const allFeatures = [
+    ...mainFeatures,
+    ...contentGenerationFeatures,
+    ...mediaUtilitiesFeatures,
+    ...specializedAIFeatures,
+    ...workflowToolsFeatures,
+  ];
+
   return (
     <div className="space-y-8">
       <div className="bg-card p-6 rounded-lg shadow-md">
@@ -30,27 +71,12 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {mainFeatures.map((feature) => (
-          <Card key={feature.title} className="flex flex-col hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <feature.icon className="h-8 w-8 text-primary" />
-                <CardTitle className="font-headline text-2xl">{feature.title}</CardTitle>
-              </div>
-              <CardDescription className="pt-2">{feature.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-grow" />
-            <CardContent>
-              <Link href={feature.href}>
-                <Button className="w-full">
-                  Go to {feature.title} <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Section title="Core Tools" features={mainFeatures} />
+      <Section title="Content Generation Suite" features={contentGenerationFeatures} />
+      <Section title="Media Utilities" features={mediaUtilitiesFeatures} />
+      <Section title="Specialized AI Tools" features={specializedAIFeatures} />
+      <Section title="Workflow & Productivity" features={workflowToolsFeatures} />
+
 
       <div className="grid gap-6 md:grid-cols-2">
          <Card className="hover:shadow-lg transition-shadow">
@@ -85,6 +111,48 @@ export default function DashboardPage() {
             </Link>
           </CardContent>
         </Card>
+      </div>
+    </div>
+  );
+}
+
+interface Feature {
+  title: string;
+  description: string;
+  icon: React.ElementType;
+  href: string;
+}
+
+interface SectionProps {
+  title: string;
+  features: Feature[];
+}
+
+function Section({ title, features }: SectionProps) {
+  if (!features || features.length === 0) return null;
+  return (
+    <div>
+      <h2 className="font-headline text-2xl md:text-3xl font-semibold text-primary mb-6">{title}</h2>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {features.map((feature) => (
+          <Card key={feature.title} className="flex flex-col hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <feature.icon className="h-8 w-8 text-primary" />
+                <CardTitle className="font-headline text-2xl">{feature.title}</CardTitle>
+              </div>
+              <CardDescription className="pt-2">{feature.description}</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-grow" /> {/* Pushes button to bottom */}
+            <CardContent>
+              <Link href={feature.href}>
+                <Button className="w-full">
+                  Go to {feature.title} <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   );
