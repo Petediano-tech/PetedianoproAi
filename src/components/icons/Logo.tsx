@@ -27,7 +27,7 @@ export function Logo(props: SVGProps<SVGSVGElement>) {
         Petediano
       </text>
       <text
-        x="138"
+        x="148"
         y="35"
         fontFamily="Alegreya, serif"
         fontSize="20"
