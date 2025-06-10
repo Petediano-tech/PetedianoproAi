@@ -8,4 +8,6 @@ import '@/ai/flows/get-motivational-quote.ts';
 import '@/ai/flows/peteai-assistant.ts';
 import '@/ai/flows/generate-story-with-images.ts';
 import '@/ai/flows/analyze-uploaded-file.ts';
-import '@/ai/flows/generate-animation-concept.ts'; // Added new flow
+import '@/ai/flows/generate-animation-concept.ts';
+import '@/ai/flows/generate-video-script.ts'; // Added new flow
+import '@/ai/flows/generate-blog-post.ts'; // Added new flow
