@@ -5,8 +5,7 @@ import Link from "next/link";
 import { 
     ArrowRight, Edit3, Sparkles, ImageIcon, FileText, Bot, MessageSquare, 
     Settings, DollarSign, Film, Video, Newspaper, Presentation, Share2 as ShareIcon, 
-    Music2, Maximize, Scissors, ScanSearch, FileSignature, Briefcase, Layers, 
-    Palette as BrandPalette, Users, Brain, Lightbulb 
+    Users, Brain, Lightbulb 
 } from "lucide-react";
 
 const mainFeatures = [
@@ -26,25 +25,10 @@ const contentGenerationFeatures = [
   { title: "Social Media Planner", description: "Plan social media campaigns.", icon: ShareIcon, href: "/content-generator/social-media-plans" },
 ];
 
-const mediaUtilitiesFeatures = [
-    { title: "Image Upscaler", description: "Increase image resolution.", icon: Maximize, href: "/media-utilities/image-upscaler"},
-    { title: "Advanced BG Remover", description: "Refined background removal.", icon: Scissors, href: "/media-utilities/advanced-bg-remover"},
-    { title: "Object Remover", description: "Remove objects from images.", icon: ScanSearch, href: "/media-utilities/object-remover"},
-    { title: "Document Summarizer", description: "Summarize text documents.", icon: FileSignature, href: "/media-utilities/document-summarizer"},
-    { title: "Music Suggester", description: "Find music for projects.", icon: Music2, href: "/media-utilities/music-suggester"},
-];
-
 const specializedAIFeatures = [
     { title: "Character Persona Gen", description: "Develop character profiles.", icon: Users, href: "/specialized-ai/character-persona"},
     { title: '"What If" Scenarios', description: "Explore alternative outcomes.", icon: Lightbulb, href: "/specialized-ai/what-if-scenario"},
 ];
-
-const workflowToolsFeatures = [
-    { title: "Project Workspace", description: "Organize your creations.", icon: Briefcase, href: "/workflow/project-workspace"},
-    { title: "Batch Processing (VIP)", description: "Process multiple items.", icon: Layers, href: "/workflow/batch-processing"},
-    { title: "Brand Kit (VIP)", description: "Manage brand assets.", icon: BrandPalette, href: "/workflow/brand-kit"},
-];
-
 
 // Dummy user data
 const user = {
@@ -52,14 +36,6 @@ const user = {
 };
 
 export default function DashboardPage() {
-  const allFeatures = [
-    ...mainFeatures,
-    ...contentGenerationFeatures,
-    ...mediaUtilitiesFeatures,
-    ...specializedAIFeatures,
-    ...workflowToolsFeatures,
-  ];
-
   return (
     <div className="space-y-8">
       <div className="bg-card p-6 rounded-lg shadow-md">
@@ -73,10 +49,7 @@ export default function DashboardPage() {
 
       <Section title="Core Tools" features={mainFeatures} />
       <Section title="Content Generation Suite" features={contentGenerationFeatures} />
-      <Section title="Media Utilities" features={mediaUtilitiesFeatures} />
       <Section title="Specialized AI Tools" features={specializedAIFeatures} />
-      <Section title="Workflow & Productivity" features={workflowToolsFeatures} />
-
 
       <div className="grid gap-6 md:grid-cols-2">
          <Card className="hover:shadow-lg transition-shadow">

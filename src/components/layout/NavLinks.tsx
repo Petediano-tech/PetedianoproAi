@@ -21,15 +21,7 @@ import {
   Video,
   Newspaper,
   Presentation,
-  Share2 as ShareIcon, // Renamed to avoid conflict
-  Music2,
-  Maximize,
-  Scissors,
-  ScanSearch,
-  FileSignature,
-  Briefcase,
-  Layers,
-  Palette,
+  Share2 as ShareIcon,
   Users,
   Brain,
   Lightbulb
@@ -54,17 +46,6 @@ const navItems = [
   },
   { href: '/picture-generator', label: 'Picture Generator', icon: ImageIcon },
   { href: '/animation-generator', label: 'Animation Generator', icon: Film },
-  {
-    label: 'Media Utilities',
-    icon: Scissors, // Using Scissors as a general "tools" icon
-    subItems: [
-      { href: '/media-utilities/image-upscaler', label: 'Image Upscaler', icon: Maximize },
-      { href: '/media-utilities/advanced-bg-remover', label: 'Advanced BG Remover', icon: Scissors },
-      { href: '/media-utilities/object-remover', label: 'Object Remover', icon: ScanSearch }, // Icon can be improved
-      { href: '/media-utilities/document-summarizer', label: 'Doc Summarizer', icon: FileSignature },
-      { href: '/media-utilities/music-suggester', label: 'Music Suggester', icon: Music2 },
-    ],
-  },
   { href: '/file-analyzer', label: 'File Analyzer', icon: FileText },
   { href: '/assistant', label: 'PeteAI Assistant', icon: Bot },
   {
@@ -73,15 +54,6 @@ const navItems = [
     subItems: [
       { href: '/specialized-ai/character-persona', label: 'Character Persona', icon: Users },
       { href: '/specialized-ai/what-if-scenario', label: '"What If" Scenarios', icon: Lightbulb },
-    ],
-  },
-  {
-    label: 'Workflow Tools',
-    icon: Briefcase,
-    subItems: [
-      { href: '/workflow/project-workspace', label: 'Project Workspace', icon: Briefcase },
-      { href: '/workflow/batch-processing', label: 'Batch Processing (VIP)', icon: Layers },
-      { href: '/workflow/brand-kit', label: 'Brand Kit (VIP)', icon: Palette },
     ],
   },
   { type: 'separator' },
@@ -162,4 +134,3 @@ export function NavLinks() {
     </>
   );
 }
-
