@@ -124,18 +124,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="py-16 md:py-24">
-          <div className="container text-center">
-             <Image 
-                src="https://placehold.co/1200x400.png" 
-                alt="Petediano Pro App Showcase" 
-                width={1200} 
-                height={400} 
-                className="rounded-lg shadow-2xl mx-auto"
-                data-ai-hint="app mockup interface"
-              />
-          </div>
-        </section>
       </main>
 
       <footer className="py-8 border-t">
