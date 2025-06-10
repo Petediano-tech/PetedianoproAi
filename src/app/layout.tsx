@@ -1,7 +1,9 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
-import { ThemeProvider } from '@/components/theme-provider'; // Will create this
+import { ThemeProvider } from '@/components/theme-provider';
+import { OnlineStatusProvider } from '@/context/OnlineStatusProvider';
 
 export const metadata: Metadata = {
   title: 'Petediano Pro',
@@ -28,7 +30,9 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
         >
-          {children}
+          <OnlineStatusProvider>
+            {children}
+          </OnlineStatusProvider>
           <Toaster />
         </ThemeProvider>
       </body>
