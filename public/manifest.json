@@ -1,0 +1,76 @@
+{
+  "name": "Petediano Pro",
+  "short_name": "PetedianoPro",
+  "description": "Professional AI-powered creative suite by Peter Damiano",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F3E5F5",
+  "theme_color": "#9C27B0",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://placehold.co/72x72.png?text=P",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://placehold.co/96x96.png?text=P",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://placehold.co/128x128.png?text=P",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://placehold.co/144x144.png?text=P",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://placehold.co/152x152.png?text=P",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://placehold.co/192x192.png?text=P",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "https://placehold.co/384x384.png?text=P",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://placehold.co/512x512.png?text=P",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "https://placehold.co/1280x720.png?text=Screenshot1",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "App Screenshot 1"
+    },
+    {
+      "src": "https://placehold.co/720x1280.png?text=Screenshot2",
+      "sizes": "720x1280",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "App Screenshot 2"
+    }
+  ]
+}
