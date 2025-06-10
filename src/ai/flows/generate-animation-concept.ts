@@ -21,13 +21,13 @@ const KeyframeSchema = z.object({
   gesture: z.string().optional().describe('Description of any gestures (e.g., "waves right hand", "points up").'),
 });
 
-export const GenerateAnimationConceptInputSchema = z.object({
+const GenerateAnimationConceptInputSchema = z.object({
   prompt: z.string().describe('The main idea or scene for the animation (e.g., "a cat explaining gravity", "a wizard casting a spell").'),
   characterDescription: z.string().optional().describe('Optional: A description of the main character (e.g., "a small, fluffy blue monster with big eyes", "an old knight in shining armor").'),
 });
 export type GenerateAnimationConceptInput = z.infer<typeof GenerateAnimationConceptInputSchema>;
 
-export const GenerateAnimationConceptOutputSchema = z.object({
+const GenerateAnimationConceptOutputSchema = z.object({
   animationTitle: z.string().describe('A catchy title for the animation concept.'),
   characterImageUrl: z.string().describe('Data URI of the generated main character image.'),
   characterDesignNotes: z.string().describe('Brief notes on the character design based on the prompt/description.'),
@@ -108,3 +108,4 @@ const generateAnimationConceptFlow = ai.defineFlow(
     };
   }
 );
+
