@@ -1,4 +1,3 @@
-
 "use client";
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,8 @@ import { generateOriginalPictures, type GenerateOriginalPicturesInput, type Gene
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
+import Link from 'next/link';
 
 const imageTypes = ["picture", "wallpaper", "logo", "flyer", "collage", "social media post"];
 const aspectRatios = ["16:9", "1:1", "4:5", "9:16", "4:3", "3:4"];
@@ -20,7 +21,7 @@ const fonts = ["Arial", "Verdana", "Times New Roman", "Courier New", "Belleza", 
 
 
 export default function PictureGeneratorPage() {
-  const [promptText, setPromptText] = useState<string>(""); // Renamed from prompt to avoid conflict with AI flow input
+  const [promptText, setPromptText] = useState<string>("");
   const [imageType, setImageType] = useState<string>(imageTypes[0]);
   const [text, setText] = useState<string>("");
   const [font, setFont] = useState<string>(fonts[0]);
@@ -33,18 +34,37 @@ export default function PictureGeneratorPage() {
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
 
+  const showUpgradeToast = () => {
+    toast({
+      title: "Daily Limit Reached",
+      description: "You've used all your free picture generations for today.",
+      variant: "destructive",
+      action: (
+        <Link href="/vip">
+          <Button variant="secondary" size="sm">Upgrade to VIP</Button>
+        </Link>
+      ),
+    });
+  };
+
   const handleGeneratePicture = async () => {
     if (!promptText) {
       toast({ title: "Error", description: "Please enter a prompt for the image.", variant: "destructive" });
       return;
     }
+
+    if (!canUseFeature(FEATURE_NAMES.PICTURE_GENERATOR)) {
+      showUpgradeToast();
+      return;
+    }
+
     setIsLoading(true);
     setProgress(20);
     setGeneratedImageUrl(null);
     try {
       const input: GenerateOriginalPicturesInput = {
         type: imageType as any, 
-        prompt: promptText, // Use renamed state variable
+        prompt: promptText,
         text: text || undefined,
         font: text ? font : undefined,
         aspectRatio: aspectRatio || undefined,
@@ -53,6 +73,7 @@ export default function PictureGeneratorPage() {
       const result: GenerateOriginalPicturesOutput = await generateOriginalPictures(input);
       setTimeout(() => setProgress(100), 1000);
       setGeneratedImageUrl(result.imageUrl);
+      recordFeatureUsage(FEATURE_NAMES.PICTURE_GENERATOR);
       toast({ title: "Success", description: "Picture generated successfully!" });
     } catch (error) {
       console.error("Error generating picture:", error);
@@ -74,14 +95,23 @@ export default function PictureGeneratorPage() {
             await navigator.share({
                 title: 'AI Generated Picture by Petediano Pro',
                 text: `Check out this image I generated with Petediano Pro! Prompt: "${promptText}"`,
-                url: generatedImageUrl, // Sharing data URI might be an issue on some platforms, consider converting to blob if problems arise.
+                // To share data URI directly, convert to blob first for better compatibility
+                // const blob = await (await fetch(generatedImageUrl)).blob();
+                // const file = new File([blob], `petediano_art_${Date.now()}.png`, { type: blob.type });
+                // files: [file], // Some platforms might prefer files array
+                url: generatedImageUrl, // Data URI might work on some, but not all platforms
             });
             toast({ title: "Shared successfully!"});
         } catch (error) {
             console.error('Error sharing:', error);
-            // Check if the error is due to user cancellation
             if ((error as DOMException).name !== 'AbortError') {
-              toast({ title: "Sharing failed", description: (error as Error).message, variant: "destructive" });
+              // Try copying to clipboard as fallback if sharing image data directly fails
+              try {
+                await navigator.clipboard.writeText(generatedImageUrl);
+                toast({ title: "Copied to Clipboard", description: "Image data URI copied. Sharing directly might not be supported."});
+              } catch (copyError) {
+                 toast({ title: "Sharing failed", description: (error as Error).message, variant: "destructive" });
+              }
             }
         }
     } else {
@@ -95,7 +125,7 @@ export default function PictureGeneratorPage() {
   };
 
   const handleSendFeedback = () => {
-    console.log("Feedback received:", feedbackText);
+    console.log("Feedback received:", feedbackText); // In a real app, send this to a backend
     toast({ title: "Feedback Sent", description: "Thank you for your feedback!" });
     setFeedbackText("");
     setIsFeedbackDialogOpen(false);
@@ -204,7 +234,7 @@ export default function PictureGeneratorPage() {
                          <DialogClose asChild>
                            <Button variant="outline">Cancel</Button>
                          </DialogClose>
-                        <Button onClick={handleSendFeedback}>Send Feedback</Button>
+                        <Button onClick={handleSendFeedback} disabled={!feedbackText.trim()}>Send Feedback</Button>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
@@ -224,4 +254,3 @@ export default function PictureGeneratorPage() {
     </div>
   );
 }
-

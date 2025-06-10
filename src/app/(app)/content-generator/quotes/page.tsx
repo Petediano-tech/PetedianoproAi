@@ -10,6 +10,8 @@ import Image from "next/image";
 import { getMotivationalQuote, type GetMotivationalQuoteInput, type GetMotivationalQuoteOutput } from '@/ai/flows/get-motivational-quote';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
+import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
+import Link from 'next/link';
 
 export default function QuotesGeneratorPage() {
   const [topic, setTopic] = useState<string>("");
@@ -19,8 +21,25 @@ export default function QuotesGeneratorPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
 
+  const showUpgradeToast = () => {
+    toast({
+      title: "Daily Limit Reached",
+      description: "You've used all your free quote generations for today.",
+      variant: "destructive",
+      action: (
+        <Link href="/vip">
+          <Button variant="secondary" size="sm">Upgrade to VIP</Button>
+        </Link>
+      ),
+    });
+  };
 
   const handleGenerateQuote = async () => {
+    if (!canUseFeature(FEATURE_NAMES.QUOTES)) {
+      showUpgradeToast();
+      return;
+    }
+
     setIsLoading(true);
     setProgress(30);
     setGeneratedQuote(null);
@@ -34,6 +53,7 @@ export default function QuotesGeneratorPage() {
       if (result.imageUrl) {
         setGeneratedImage(result.imageUrl);
       }
+      recordFeatureUsage(FEATURE_NAMES.QUOTES);
       toast({ title: "Success", description: "Quote generated successfully!" });
     } catch (error) {
       console.error("Error generating quote:", error);
@@ -119,7 +139,7 @@ export default function QuotesGeneratorPage() {
                   <Button variant="ghost" size="icon"><ThumbsDown className="h-5 w-5" /></Button>
                   <Button variant="ghost" size="icon"><MessageCircle className="h-5 w-5" /></Button>
                   <Button variant="ghost" size="icon"><Share2 className="h-5 w-5" /></Button>
-                  {generatedImage && !textOnly && <Button><Download className="mr-2 h-5 w-5" /> Download Image</Button>}
+                  {generatedImage && !textOnly && <Button asChild><a href={generatedImage} download={`petediano_quote_${Date.now()}.png`}><Download className="mr-2 h-5 w-5" /> Download Image</a></Button>}
                 </div>
               </div>
             )}
@@ -129,4 +149,3 @@ export default function QuotesGeneratorPage() {
     </div>
   );
 }
-

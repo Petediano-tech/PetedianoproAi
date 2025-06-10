@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,33 +7,40 @@ import { Label } from "@/components/ui/label";
 import { DollarSign, CheckCircle, Crown, KeyRound } from "lucide-react";
 import Image from 'next/image';
 import { toast } from '@/hooks/use-toast';
+import { isUserVip, setVipStatus } from '@/lib/usage-limiter';
 
 // Conceptual SVGs for payment logos
 const AirtelMoneyLogo = () => <div className="h-8 w-8 bg-red-500 text-white flex items-center justify-center rounded-full text-xs font-bold">AM</div>;
 const TNMMpambaLogo = () => <div className="h-8 w-8 bg-orange-500 text-white flex items-center justify-center rounded-full text-xs font-bold">TM</div>;
 
+const USD_TO_MWK_RATE = 1800; // Placeholder exchange rate: 1 USD = 1800 MWK
+
 const vipPlans = [
-  { name: "Monthly", price: "$0.50", duration: "per month", features: ["Unlimited Generations", "Priority Support", "Early Access"] },
-  { name: "Quarterly", price: "$1.00", duration: "for 3 months", features: ["All Monthly Benefits", "10% Discount"], popular: true },
-  { name: "Yearly", price: "$2.00", duration: "per year", features: ["All Monthly Benefits", "20% Discount", "Exclusive Content"] },
-  { name: "Lifetime", price: "$5.00", duration: "one-time", features: ["All Yearly Benefits", "Never Pay Again"], bestValue: true },
+  { name: "Monthly", priceUSD: 0.50, duration: "per month", features: ["Unlimited Generations", "Priority Support", "Early Access"] },
+  { name: "Quarterly", priceUSD: 1.00, duration: "for 3 months", features: ["All Monthly Benefits", "10% Discount"], popular: true },
+  { name: "Yearly", priceUSD: 2.00, duration: "per year", features: ["All Yearly Benefits", "20% Discount", "Exclusive Content"] },
+  { name: "Lifetime", priceUSD: 5.00, duration: "one-time", features: ["All Yearly Benefits", "Never Pay Again"], bestValue: true },
 ];
 
 const OWNER_PASSKEY = "Pete012@Ai";
 
 export default function VipPage() {
   const [passkey, setPasskey] = useState('');
-  const [isVip, setIsVip] = useState(false); // This would come from user state
+  const [currentIsVip, setCurrentIsVip] = useState(false); 
+
+  useEffect(() => {
+    setCurrentIsVip(isUserVip());
+  }, []);
 
   const handlePasskeySubmit = () => {
     if (passkey === OWNER_PASSKEY) {
-      setIsVip(true); // Simulate VIP activation
+      setVipStatus(true);
+      setCurrentIsVip(true);
       toast({
         title: "🎉 Congratulations! 🎉",
         description: "Pro VIP Lifetime Activated! Enjoy unlimited access.",
         duration: 7000,
       });
-      // Add celebration animation/music trigger here conceptually
       setPasskey('');
     } else {
       toast({
@@ -44,7 +51,11 @@ export default function VipPage() {
     }
   };
   
-  if (isVip) {
+  const formatPriceMWK = (priceUSD: number) => {
+    return `(approx. K${(priceUSD * USD_TO_MWK_RATE).toLocaleString()})`;
+  };
+
+  if (currentIsVip) {
     return (
         <div className="container mx-auto py-8 text-center">
             <Card className="max-w-md mx-auto">
@@ -83,7 +94,8 @@ export default function VipPage() {
               {plan.popular && <div className="text-xs font-semibold uppercase text-primary mb-1">Popular</div>}
               {plan.bestValue && <div className="text-xs font-semibold uppercase text-accent mb-1">Best Value</div>}
               <CardTitle className="font-headline text-2xl">{plan.name}</CardTitle>
-              <p className="text-3xl font-bold text-primary">{plan.price}</p>
+              <p className="text-3xl font-bold text-primary">${plan.priceUSD.toFixed(2)}</p>
+              <p className="text-sm text-muted-foreground">{formatPriceMWK(plan.priceUSD)}</p>
               <p className="text-sm text-muted-foreground">{plan.duration}</p>
             </CardHeader>
             <CardContent className="flex-grow">
@@ -105,7 +117,7 @@ export default function VipPage() {
       <Card>
         <CardHeader>
             <CardTitle className="font-headline text-xl">Payment Information (Malawi)</CardTitle>
-            <CardDescription>After sending payment, please send a screenshot to Peter Damiano for VIP activation.</CardDescription>
+            <CardDescription>After sending payment, please send a screenshot to Peter Damiano for VIP activation. Current rate: 1 USD = {USD_TO_MWK_RATE} MWK (approx.)</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
             <div className="flex items-center gap-4 p-3 border rounded-lg">
@@ -137,8 +149,9 @@ export default function VipPage() {
             placeholder="Enter your VIP passkey" 
             value={passkey}
             onChange={(e) => setPasskey(e.target.value)}
+            disabled={currentIsVip}
           />
-          <Button onClick={handlePasskeySubmit}>Activate</Button>
+          <Button onClick={handlePasskeySubmit} disabled={currentIsVip}>Activate</Button>
         </CardContent>
       </Card>
     </div>

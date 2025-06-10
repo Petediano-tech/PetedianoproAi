@@ -10,6 +10,8 @@ import Image from "next/image";
 import { analyzeUploadedFile, type AnalyzeUploadedFileInput, type AnalyzeUploadedFileOutput } from '@/ai/flows/analyze-uploaded-file';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
+import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
+import Link from 'next/link';
 
 export default function FileAnalyzerPage() {
   const [fileDataUri, setFileDataUri] = useState<string | null>(null);
@@ -28,7 +30,7 @@ export default function FileAnalyzerPage() {
         if (file.type.startsWith("image/")) {
           setFilePreview(reader.result as string);
         } else {
-          setFilePreview(null); // No preview for non-image files for now
+          setFilePreview(null); 
         }
         setFileType(file.type);
         setAnalysisResult(null);
@@ -37,11 +39,30 @@ export default function FileAnalyzerPage() {
     }
   };
 
+  const showUpgradeToast = () => {
+    toast({
+      title: "Daily Limit Reached",
+      description: "You've used all your free file analyses for today.",
+      variant: "destructive",
+      action: (
+        <Link href="/vip">
+          <Button variant="secondary" size="sm">Upgrade to VIP</Button>
+        </Link>
+      ),
+    });
+  };
+
   const handleAnalyzeFile = async () => {
     if (!fileDataUri) {
       toast({ title: "Error", description: "Please upload a file first.", variant: "destructive" });
       return;
     }
+
+    if (!canUseFeature(FEATURE_NAMES.FILE_ANALYZER)) {
+      showUpgradeToast();
+      return;
+    }
+
     setIsLoading(true);
     setProgress(30);
     setAnalysisResult(null);
@@ -51,6 +72,7 @@ export default function FileAnalyzerPage() {
       const result: AnalyzeUploadedFileOutput = await analyzeUploadedFile(input);
       setTimeout(() => setProgress(100), 1000);
       setAnalysisResult(result);
+      recordFeatureUsage(FEATURE_NAMES.FILE_ANALYZER);
       toast({ title: "Success", description: "File analyzed successfully!" });
     } catch (error) {
       console.error("Error analyzing file:", error);
@@ -74,7 +96,7 @@ export default function FileAnalyzerPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle className="font-headline text-xl">Upload & Analyze</CardTitle>
+            <CardTitle className="font-headline text-xl">Upload &amp; Analyze</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>

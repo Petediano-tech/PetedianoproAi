@@ -11,6 +11,8 @@ import Image from "next/image";
 import { generateStoryWithImages, type GenerateStoryWithImagesInput, type GenerateStoryWithImagesOutput } from '@/ai/flows/generate-story-with-images';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
+import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
+import Link from 'next/link';
 
 export default function StoryGeneratorPage() {
   const [topic, setTopic] = useState<string>("");
@@ -19,18 +21,35 @@ export default function StoryGeneratorPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
 
+  const showUpgradeToast = () => {
+    toast({
+      title: "Daily Limit Reached",
+      description: "You've used all your free story generations for today.",
+      variant: "destructive",
+      action: (
+        <Link href="/vip">
+          <Button variant="secondary" size="sm">Upgrade to VIP</Button>
+        </Link>
+      ),
+    });
+  };
 
   const handleGenerateStory = async () => {
     if (!topic) {
       toast({ title: "Error", description: "Please enter a topic for the story.", variant: "destructive" });
       return;
     }
+
+    if (!canUseFeature(FEATURE_NAMES.STORIES)) {
+      showUpgradeToast();
+      return;
+    }
+
     setIsLoading(true);
-    setProgress(10); // Initial progress
+    setProgress(10); 
     setGeneratedStory(null);
     try {
       const input: GenerateStoryWithImagesInput = { topic, length };
-      // Simulate progress for a long operation
       const progressInterval = setInterval(() => {
         setProgress(prev => Math.min(prev + 5, 90));
       }, 500);
@@ -40,6 +59,7 @@ export default function StoryGeneratorPage() {
       clearInterval(progressInterval);
       setProgress(100);
       setGeneratedStory(result);
+      recordFeatureUsage(FEATURE_NAMES.STORIES);
       toast({ title: "Success", description: "Story generated successfully!" });
     } catch (error) {
       console.error("Error generating story:", error);

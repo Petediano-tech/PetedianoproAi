@@ -12,6 +12,8 @@ import Image from "next/image";
 import { aiPhotoEnhancer, type AiPhotoEnhancerInput, type AiPhotoEnhancerOutput } from '@/ai/flows/ai-photo-enhancer';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
+import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
+import Link from 'next/link';
 
 export default function PhotoEditorPage() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -33,21 +35,40 @@ export default function PhotoEditorPage() {
     }
   };
 
+  const showUpgradeToast = () => {
+    toast({
+      title: "Daily Limit Reached",
+      description: "You've used all your free photo enhancements for today.",
+      variant: "destructive",
+      action: (
+        <Link href="/vip">
+          <Button variant="secondary" size="sm">Upgrade to VIP</Button>
+        </Link>
+      ),
+    });
+  };
+
   const handleEnhanceImage = async () => {
     if (!uploadedImage) {
       toast({ title: "Error", description: "Please upload an image first.", variant: "destructive" });
       return;
     }
+
+    if (!canUseFeature(FEATURE_NAMES.PHOTO_EDITOR)) {
+      showUpgradeToast();
+      return;
+    }
+
     setIsLoading(true);
     setProgress(30);
     try {
       const input: AiPhotoEnhancerInput = { photoDataUri: uploadedImage };
-      // Simulate progress
       setTimeout(() => setProgress(60), 500);
       const result: AiPhotoEnhancerOutput = await aiPhotoEnhancer(input);
       setTimeout(() => setProgress(100), 1000);
       setEnhancedImage(result.enhancedPhotoDataUri);
       setEnhancementDetails(result.enhancementDetails);
+      recordFeatureUsage(FEATURE_NAMES.PHOTO_EDITOR);
       toast({ title: "Success", description: "Image enhanced successfully!" });
     } catch (error) {
       console.error("Error enhancing image:", error);
@@ -55,7 +76,7 @@ export default function PhotoEditorPage() {
       setProgress(0);
     } finally {
       setIsLoading(false);
-      setTimeout(() => setProgress(0), 1500); // Reset progress bar after a bit
+      setTimeout(() => setProgress(0), 1500); 
     }
   };
 
@@ -69,7 +90,6 @@ export default function PhotoEditorPage() {
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Controls Column */}
         <Card className="lg:col-span-1 space-y-6">
           <CardHeader>
             <CardTitle className="font-headline text-xl">Controls</CardTitle>
@@ -88,8 +108,6 @@ export default function PhotoEditorPage() {
             </Button>
             {isLoading && <Progress value={progress} className="w-full mt-2" />}
 
-
-            {/* Placeholder for manual editing tools */}
             <div className="space-y-4 pt-4 border-t">
               <h3 className="font-semibold text-lg">Manual Adjustments (Coming Soon)</h3>
               <div className="space-y-2">
@@ -116,7 +134,6 @@ export default function PhotoEditorPage() {
           </CardContent>
         </Card>
 
-        {/* Image Display Column */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="font-headline text-xl">Preview</CardTitle>
@@ -127,7 +144,7 @@ export default function PhotoEditorPage() {
                 <h3 className="font-semibold mb-2">Original</h3>
                 <div className="aspect-square border rounded-lg flex items-center justify-center bg-muted overflow-hidden">
                   {uploadedImage ? (
-                    <Image src={uploadedImage} alt="Uploaded original" width={500} height={500} className="object-contain max-h-full max-w-full" />
+                    <Image src={uploadedImage} alt="Uploaded original" width={500} height={500} className="object-contain max-h-full max-w-full" data-ai-hint="photo original"/>
                   ) : (
                     <div className="text-center text-muted-foreground p-4">
                       <Upload className="mx-auto h-12 w-12 mb-2" />
@@ -140,7 +157,7 @@ export default function PhotoEditorPage() {
                 <h3 className="font-semibold mb-2">Enhanced</h3>
                 <div className="aspect-square border rounded-lg flex items-center justify-center bg-muted overflow-hidden">
                   {enhancedImage ? (
-                     <Image src={enhancedImage} alt="Enhanced" width={500} height={500} className="object-contain max-h-full max-w-full" />
+                     <Image src={enhancedImage} alt="Enhanced" width={500} height={500} className="object-contain max-h-full max-w-full" data-ai-hint="photo enhanced"/>
                   ) : (
                     <div className="text-center text-muted-foreground p-4">
                       <Wand2 className="mx-auto h-12 w-12 mb-2" />
@@ -162,7 +179,7 @@ export default function PhotoEditorPage() {
                 <Button variant="ghost" size="icon"><ThumbsDown className="h-5 w-5" /></Button>
                 <Button variant="ghost" size="icon"><MessageCircle className="h-5 w-5" /></Button>
                 <Button variant="ghost" size="icon"><Share2 className="h-5 w-5" /></Button>
-                <Button><Download className="mr-2 h-5 w-5" /> Download</Button>
+                <Button asChild><a href={enhancedImage} download={`petediano_enhanced_${Date.now()}.png`}><Download className="mr-2 h-5 w-5" /> Download</a></Button>
               </div>
             )}
           </CardContent>
