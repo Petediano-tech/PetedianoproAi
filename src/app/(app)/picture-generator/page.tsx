@@ -1,3 +1,4 @@
+
 "use client";
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,8 @@ import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
 import Link from 'next/link';
+import { useSoundSettings } from '@/hooks/useSoundSettings'; // Added
+import { playNotificationSound } from '@/utils/audioPlayer'; // Added
 
 const imageTypes = ["picture", "wallpaper", "logo", "flyer", "collage", "social media post"];
 const aspectRatios = ["16:9", "1:1", "4:5", "9:16", "4:3", "3:4"];
@@ -33,6 +36,7 @@ export default function PictureGeneratorPage() {
 
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
+  const { soundSettings } = useSoundSettings(); // Added
 
   const showUpgradeToast = () => {
     toast({
@@ -75,6 +79,7 @@ export default function PictureGeneratorPage() {
       setGeneratedImageUrl(result.imageUrl);
       recordFeatureUsage(FEATURE_NAMES.PICTURE_GENERATOR);
       toast({ title: "Success", description: "Picture generated successfully!" });
+      playNotificationSound(soundSettings); // Added
     } catch (error) {
       console.error("Error generating picture:", error);
       toast({ title: "Error", description: "Failed to generate picture. " + (error as Error).message, variant: "destructive" });
@@ -92,23 +97,34 @@ export default function PictureGeneratorPage() {
     }
     if (navigator.share) {
         try {
-            await navigator.share({
+            // Convert data URI to Blob for sharing as a file if possible
+            let shareData: ShareData = {
                 title: 'AI Generated Picture by Petediano Pro',
                 text: `Check out this image I generated with Petediano Pro! Prompt: "${promptText}"`,
-                // To share data URI directly, convert to blob first for better compatibility
-                // const blob = await (await fetch(generatedImageUrl)).blob();
-                // const file = new File([blob], `petediano_art_${Date.now()}.png`, { type: blob.type });
-                // files: [file], // Some platforms might prefer files array
-                url: generatedImageUrl, // Data URI might work on some, but not all platforms
-            });
+            };
+
+            if (generatedImageUrl.startsWith('data:')) {
+                const blob = await (await fetch(generatedImageUrl)).blob();
+                const file = new File([blob], `petediano_art_${Date.now()}.png`, { type: blob.type });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    shareData.files = [file];
+                } else {
+                    // Fallback to sharing URL if file sharing not fully supported for data URIs
+                    shareData.url = generatedImageUrl;
+                }
+            } else {
+                 shareData.url = generatedImageUrl;
+            }
+            
+            await navigator.share(shareData);
             toast({ title: "Shared successfully!"});
         } catch (error) {
             console.error('Error sharing:', error);
             if ((error as DOMException).name !== 'AbortError') {
-              // Try copying to clipboard as fallback if sharing image data directly fails
+              // Try copying to clipboard as fallback
               try {
                 await navigator.clipboard.writeText(generatedImageUrl);
-                toast({ title: "Copied to Clipboard", description: "Image data URI copied. Sharing directly might not be supported."});
+                toast({ title: "Copied to Clipboard", description: "Image data URI copied. Direct sharing might not be supported or was cancelled."});
               } catch (copyError) {
                  toast({ title: "Sharing failed", description: (error as Error).message, variant: "destructive" });
               }

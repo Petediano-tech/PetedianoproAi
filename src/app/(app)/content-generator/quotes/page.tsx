@@ -1,3 +1,4 @@
+
 "use client";
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,8 @@ import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
 import Link from 'next/link';
+import { useSoundSettings } from '@/hooks/useSoundSettings'; // Added
+import { playNotificationSound } from '@/utils/audioPlayer'; // Added
 
 export default function QuotesGeneratorPage() {
   const [topic, setTopic] = useState<string>("");
@@ -20,6 +23,7 @@ export default function QuotesGeneratorPage() {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const { soundSettings } = useSoundSettings(); // Added
 
   const showUpgradeToast = () => {
     toast({
@@ -55,6 +59,7 @@ export default function QuotesGeneratorPage() {
       }
       recordFeatureUsage(FEATURE_NAMES.QUOTES);
       toast({ title: "Success", description: "Quote generated successfully!" });
+      playNotificationSound(soundSettings); // Added
     } catch (error) {
       console.error("Error generating quote:", error);
       toast({ title: "Error", description: "Failed to generate quote. " + (error as Error).message, variant: "destructive" });

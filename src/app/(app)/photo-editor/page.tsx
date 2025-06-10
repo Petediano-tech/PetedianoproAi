@@ -1,3 +1,4 @@
+
 "use client";
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,8 @@ import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
 import Link from 'next/link';
+import { useSoundSettings } from '@/hooks/useSoundSettings'; // Added
+import { playNotificationSound } from '@/utils/audioPlayer'; // Added
 
 export default function PhotoEditorPage() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -21,6 +24,7 @@ export default function PhotoEditorPage() {
   const [enhancementDetails, setEnhancementDetails] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const { soundSettings } = useSoundSettings(); // Added
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -70,6 +74,7 @@ export default function PhotoEditorPage() {
       setEnhancementDetails(result.enhancementDetails);
       recordFeatureUsage(FEATURE_NAMES.PHOTO_EDITOR);
       toast({ title: "Success", description: "Image enhanced successfully!" });
+      playNotificationSound(soundSettings); // Added
     } catch (error) {
       console.error("Error enhancing image:", error);
       toast({ title: "Error", description: "Failed to enhance image. " + (error as Error).message, variant: "destructive" });

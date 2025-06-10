@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,12 +9,16 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from '@/components/ui/separator';
-import { Upload, Trash2, Palette, Type, User, ShieldCheck, Moon, Sun } from 'lucide-react';
+import { Upload, Trash2, Palette, Type, User, ShieldCheck, Moon, Sun, Volume2, VolumeX, Zap, Music, Disc3 } from 'lucide-react';
 import { ModeToggle } from '@/components/ModeToggle';
 import { useTheme } from 'next-themes';
 import { toast } from '@/hooks/use-toast';
-import { useFontTheme } from '@/hooks/useFontTheme'; // Added
-import { AVAILABLE_FONTS, DEFAULT_FONT_THEME_KEY } from '@/lib/fonts.config'; // Added
+import { useFontTheme } from '@/hooks/useFontTheme';
+import { AVAILABLE_FONTS } from '@/lib/fonts.config';
+import { useSoundSettings } from '@/hooks/useSoundSettings'; // Added
+import { Slider } from '@/components/ui/slider'; // Added
+import { Switch } from '@/components/ui/switch'; // Added
+import { updateMasterVolume } from '@/utils/audioPlayer'; // Added
 
 // Dummy user data and functions - replace with actual auth and state management
 const user = {
@@ -31,8 +35,9 @@ const getInitials = (name: string) => {
 };
 
 export default function SettingsPage() {
-  const { theme } = useTheme(); // Removed setTheme as it's in ModeToggle
-  const { fontThemeKey, setFontTheme } = useFontTheme(); // Use new font hook
+  const { theme } = useTheme();
+  const { fontThemeKey, setFontTheme } = useFontTheme();
+  const { soundSettings, setGlobalMuted, setGlobalVolume, setTypingVibration, setGameMusic, setGameSfx } = useSoundSettings(); // Added sound hooks
 
   const [name, setName] = useState(user.name);
   const [username, setUsername] = useState(user.username);
@@ -44,6 +49,11 @@ export default function SettingsPage() {
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [deleteAccountPassword, setDeleteAccountPassword] = useState('');
 
+  // Update master volume when component mounts or volume setting changes
+  useEffect(() => {
+    updateMasterVolume(soundSettings.globalVolume);
+  }, [soundSettings.globalVolume]);
+
   const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -53,7 +63,6 @@ export default function SettingsPage() {
   };
 
   const handleProfileUpdate = () => {
-    // Logic to update profile (name, username, email, profile picture)
     toast({ title: "Profile Updated", description: "Your profile information has been saved." });
   };
 
@@ -62,7 +71,6 @@ export default function SettingsPage() {
       toast({ title: "Error", description: "New passwords do not match.", variant: "destructive" });
       return;
     }
-    // Logic to change password
     toast({ title: "Password Changed", description: "Your password has been updated." });
   };
 
@@ -71,7 +79,6 @@ export default function SettingsPage() {
        toast({ title: "Error", description: "Please enter your password to confirm deletion.", variant: "destructive" });
       return;
     }
-    // Logic to delete account, requires password confirmation
     toast({ title: "Account Deletion Requested", description: "Your account deletion request is being processed." });
   };
 
@@ -80,7 +87,7 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="font-headline text-3xl text-primary">Settings</CardTitle>
-          <CardDescription>Manage your account, appearance, and preferences.</CardDescription>
+          <CardDescription>Manage your account, appearance, sounds, and preferences.</CardDescription>
         </CardHeader>
       </Card>
 
@@ -149,6 +156,88 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Sound Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-headline text-xl flex items-center"><Volume2 className="mr-2 h-5 w-5 text-primary" />Sound</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="master-mute">Master Sound</Label>
+              <Switch
+                id="master-mute"
+                checked={!soundSettings.isGlobalMuted}
+                onCheckedChange={(checked) => setGlobalMuted(!checked)}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Toggle all application sounds on or off.</p>
+          </div>
+          <div>
+            <Label htmlFor="master-volume">Master Volume</Label>
+            <div className="flex items-center gap-2">
+              <VolumeX className="h-4 w-4 text-muted-foreground" />
+              <Slider
+                id="master-volume"
+                min={0}
+                max={1}
+                step={0.01}
+                value={[soundSettings.globalVolume]}
+                onValueChange={(value) => setGlobalVolume(value[0])}
+                disabled={soundSettings.isGlobalMuted}
+              />
+              <Volume2 className="h-4 w-4 text-muted-foreground" />
+            </div>
+             <p className="text-xs text-muted-foreground mt-1">Adjust the volume for all application sounds. Effective if Master Sound is ON.</p>
+          </div>
+           <Separator />
+          <div>
+            <h3 className="font-semibold mb-2 text-lg">Game Sounds (Conceptual)</h3>
+            <div className="flex items-center justify-between mb-2">
+              <Label htmlFor="game-music" className="flex items-center"><Music className="mr-2 h-4 w-4"/>Game Music</Label>
+              <Switch
+                id="game-music"
+                checked={soundSettings.isGameMusicEnabled}
+                onCheckedChange={setGameMusic}
+                disabled // Conceptual
+              />
+            </div>
+             <div className="flex items-center justify-between">
+              <Label htmlFor="game-sfx" className="flex items-center"><Disc3 className="mr-2 h-4 w-4"/>Game Sound Effects</Label>
+              <Switch
+                id="game-sfx"
+                checked={soundSettings.isGameSfxEnabled}
+                onCheckedChange={setGameSfx}
+                disabled // Conceptual
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">Controls for game-specific audio (feature coming soon).</p>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Haptic Feedback Settings (Conceptual) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-headline text-xl flex items-center"><Zap className="mr-2 h-5 w-5 text-primary" />Haptic Feedback</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="typing-vibration">Typing Vibration</Label>
+              <Switch
+                id="typing-vibration"
+                checked={soundSettings.isTypingVibrationEnabled}
+                onCheckedChange={setTypingVibration}
+                disabled // Conceptual
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Enable or disable vibration when typing in text fields (feature coming soon).</p>
+          </div>
+        </CardContent>
+      </Card>
+
 
       {/* Security Settings */}
       <Card>

@@ -1,3 +1,4 @@
+
 "use client";
 import { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,8 @@ import { Bot, User, Send, Sparkles, Loader2 } from "lucide-react";
 import { peteAiAssistant, type PeteAiAssistantInput, type PeteAiAssistantOutput } from '@/ai/flows/peteai-assistant';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useSoundSettings } from '@/hooks/useSoundSettings'; // Added
+import { playNotificationSound } from '@/utils/audioPlayer'; // Added
 
 interface Message {
   id: string;
@@ -22,6 +25,7 @@ export default function AssistantPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const { soundSettings } = useSoundSettings(); // Added
 
   useEffect(() => {
     // Scroll to bottom when new messages are added
@@ -57,6 +61,7 @@ export default function AssistantPage() {
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, aiMessage]);
+      playNotificationSound(soundSettings); // Added
     } catch (error) {
       console.error("Error with PeteAI Assistant:", error);
       toast({ title: "Error", description: "PeteAI Assistant is currently unavailable. " + (error as Error).message, variant: "destructive" });

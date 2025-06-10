@@ -1,3 +1,4 @@
+
 "use client";
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,8 @@ import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
 import Link from 'next/link';
+import { useSoundSettings } from '@/hooks/useSoundSettings'; // Added
+import { playNotificationSound } from '@/utils/audioPlayer'; // Added
 
 export default function StoryGeneratorPage() {
   const [topic, setTopic] = useState<string>("");
@@ -20,6 +23,7 @@ export default function StoryGeneratorPage() {
   const [generatedStory, setGeneratedStory] = useState<GenerateStoryWithImagesOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const { soundSettings } = useSoundSettings(); // Added
 
   const showUpgradeToast = () => {
     toast({
@@ -61,6 +65,7 @@ export default function StoryGeneratorPage() {
       setGeneratedStory(result);
       recordFeatureUsage(FEATURE_NAMES.STORIES);
       toast({ title: "Success", description: "Story generated successfully!" });
+      playNotificationSound(soundSettings); // Added
     } catch (error) {
       console.error("Error generating story:", error);
       toast({ title: "Error", description: "Failed to generate story. " + (error as Error).message, variant: "destructive" });

@@ -15,6 +15,8 @@ import { Progress } from '@/components/ui/progress';
 import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useSoundSettings } from '@/hooks/useSoundSettings'; // Added
+import { playNotificationSound } from '@/utils/audioPlayer'; // Added
 
 export default function AnimationGeneratorPage() {
   const [prompt, setPrompt] = useState<string>("");
@@ -22,6 +24,7 @@ export default function AnimationGeneratorPage() {
   const [generatedConcept, setGeneratedConcept] = useState<GenerateAnimationConceptOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [progressValue, setProgressValue] = useState(0);
+  const { soundSettings } = useSoundSettings(); // Added
 
   const showUpgradeToast = () => {
     toast({
@@ -53,7 +56,7 @@ export default function AnimationGeneratorPage() {
     
     const progressInterval = setInterval(() => {
         setProgressValue(prev => Math.min(prev + 5, 90));
-    }, 1200); // Slower interval as image generation can take time
+    }, 1200);
 
     try {
       const input: GenerateAnimationConceptInput = { prompt, characterDescription };
@@ -61,6 +64,7 @@ export default function AnimationGeneratorPage() {
       setGeneratedConcept(result);
       recordFeatureUsage(FEATURE_NAMES.ANIMATION_GENERATOR);
       toast({ title: "Success", description: "Animation concept generated successfully!" });
+      playNotificationSound(soundSettings); // Added
     } catch (error) {
       console.error("Error generating animation concept:", error);
       toast({ title: "Error", description: "Failed to generate concept. " + (error as Error).message, variant: "destructive" });
@@ -78,8 +82,6 @@ export default function AnimationGeneratorPage() {
       return;
     }
     try {
-      // Filter out large image data URIs if they cause issues, or keep them.
-      // For now, keeping them as they are part of the concept.
       const jsonString = JSON.stringify(generatedConcept, null, 2);
       const blob = new Blob([jsonString], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -204,7 +206,7 @@ export default function AnimationGeneratorPage() {
                               <Image src={frame.imageUrl} alt={`Visual for keyframe ${index + 1}`} width={400} height={225} className="mx-auto object-contain max-h-[225px] w-full" data-ai-hint="animation keyframe character" />
                             </div>
                           )}
-                          {!frame.imageUrl && index < 3 && (
+                          {!frame.imageUrl && index < 3 && ( // Assuming MAX_KEYFRAME_IMAGES is 3
                             <div className="mb-3 p-4 text-sm text-muted-foreground bg-muted rounded-md text-center">
                                 Image generation skipped or failed for this keyframe.
                             </div>
@@ -234,4 +236,3 @@ export default function AnimationGeneratorPage() {
     </div>
   );
 }
-

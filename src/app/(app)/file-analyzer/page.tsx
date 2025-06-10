@@ -1,3 +1,4 @@
+
 "use client";
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,8 @@ import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
 import Link from 'next/link';
+import { useSoundSettings } from '@/hooks/useSoundSettings'; // Added
+import { playNotificationSound } from '@/utils/audioPlayer'; // Added
 
 export default function FileAnalyzerPage() {
   const [fileDataUri, setFileDataUri] = useState<string | null>(null);
@@ -20,6 +23,7 @@ export default function FileAnalyzerPage() {
   const [analysisResult, setAnalysisResult] = useState<AnalyzeUploadedFileOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const { soundSettings } = useSoundSettings(); // Added
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -74,6 +78,7 @@ export default function FileAnalyzerPage() {
       setAnalysisResult(result);
       recordFeatureUsage(FEATURE_NAMES.FILE_ANALYZER);
       toast({ title: "Success", description: "File analyzed successfully!" });
+      playNotificationSound(soundSettings); // Added
     } catch (error) {
       console.error("Error analyzing file:", error);
       toast({ title: "Error", description: "Failed to analyze file. " + (error as Error).message, variant: "destructive" });
