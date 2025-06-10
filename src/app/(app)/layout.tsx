@@ -1,3 +1,4 @@
+
 import { AppHeader } from '@/components/layout/AppHeader';
 import { NavLinks } from '@/components/layout/NavLinks';
 import {
@@ -14,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '@/components/icons/Logo';
+import { GlobalLoadingIndicator } from '@/components/layout/GlobalLoadingIndicator'; // Added import
 
 export default function AppLayout({
   children,
@@ -22,6 +24,7 @@ export default function AppLayout({
 }) {
   return (
     <SidebarProvider defaultOpen>
+      <GlobalLoadingIndicator /> {/* Added component here */}
       <div className="flex min-h-screen">
         <Sidebar className="bg-sidebar text-sidebar-foreground" collapsible="icon">
           <SidebarHeader className="p-4 border-b border-sidebar-border">
