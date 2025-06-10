@@ -75,7 +75,6 @@ export function NavLinks() {
           return <div key={`sep-${index}`} className="my-2 border-t border-sidebar-border mx-2" />;
         }
         if (item.subItems) {
-          // Check if any sub-item is active to highlight the parent group label
           const isGroupActive = item.subItems.some(subItem => pathname.startsWith(subItem.href));
           return (
             <div key={item.label} className="px-2">
@@ -100,10 +99,10 @@ export function NavLinks() {
                         )}
                         tooltip={{ children: subItem.label }}
                       >
-                        <>
+                        <span> {/* Wrapper span for the content of asChild */}
                           <subItem.icon className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
                           <span className="group-data-[collapsible=icon]:hidden">{subItem.label}</span>
-                        </>
+                        </span>
                       </SidebarMenuButton>
                     </Link>
                   </li>
@@ -123,10 +122,10 @@ export function NavLinks() {
               )}
               tooltip={{ children: item.label }}
             >
-              <>
+              <span> {/* Wrapper span for the content of asChild */}
                 <item.icon className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
                 <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
-              </>
+              </span>
             </SidebarMenuButton>
           </Link>
         );
