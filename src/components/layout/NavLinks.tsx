@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -16,6 +17,7 @@ import {
   HelpCircle,
   Phone,
   Mail,
+  Film, // Added Film icon
 } from 'lucide-react';
 import { SidebarMenuButton } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
@@ -32,6 +34,7 @@ const navItems = [
     ],
   },
   { href: '/picture-generator', label: 'Picture Generator', icon: ImageIcon },
+  { href: '/animation-generator', label: 'Animation Generator', icon: Film }, // Added Animation Generator
   { href: '/file-analyzer', label: 'File Analyzer', icon: FileText },
   { href: '/assistant', label: 'PeteAI Assistant', icon: Bot },
   // { href: '/messaging', label: 'Messaging', icon: MessageSquare }, // Complex, placeholder for now

@@ -1,3 +1,4 @@
+
 "use client";
 
 const USAGE_STORAGE_KEY = 'petedianoProUsage';
@@ -96,4 +97,5 @@ export const FEATURE_NAMES = {
   PHOTO_EDITOR: 'PHOTO_EDITOR',
   PICTURE_GENERATOR: 'PICTURE_GENERATOR',
   FILE_ANALYZER: 'FILE_ANALYZER',
+  ANIMATION_GENERATOR: 'ANIMATION_GENERATOR', // Added new feature name
 };
