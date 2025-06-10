@@ -30,17 +30,13 @@ const specializedAIFeatures = [
     { title: '"What If" Scenarios', description: "Explore alternative outcomes.", icon: Lightbulb, href: "/specialized-ai/what-if-scenario"},
 ];
 
-// Dummy user data
-const user = {
-  name: "Peter",
-};
 
 export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <div className="bg-card p-6 rounded-lg shadow-md">
         <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">
-          Welcome back, {user.name}!
+          Welcome to your Dashboard!
         </h1>
         <p className="mt-2 text-lg text-muted-foreground">
           Ready to create something amazing today? Explore your AI toolkit below.

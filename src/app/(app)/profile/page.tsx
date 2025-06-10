@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -6,20 +7,24 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, Mail, Edit } from 'lucide-react';
 import Link from "next/link";
 
-// Dummy user data - replace with actual auth and state management
+// Generic user data - replace with actual auth and state management
 const user = {
-  name: 'Peter Damiano',
-  username: 'Petediano',
-  email: 'peterdamiano12masterpro@gmail.com',
-  profilePictureUrl: '', // URL to profile picture
-  bio: 'Creator of Petediano Pro. Passionate about AI and technology.',
-  joinDate: new Date().toLocaleDateString(), // Placeholder
+  name: 'Your Name',
+  username: 'your_username',
+  email: 'your.email@example.com',
+  profilePictureUrl: '', 
+  bio: 'Your bio will appear here. You can edit this in settings.',
+  joinDate: new Date().toLocaleDateString(), 
 };
 
 const getInitials = (name: string) => {
+  if (!name) return 'U';
   const names = name.split(' ');
-  if (names.length === 1) return names[0][0].toUpperCase();
-  return names[0][0].toUpperCase() + names[names.length - 1][0].toUpperCase();
+  if (names.length === 1 && names[0].length > 0) return names[0][0].toUpperCase();
+  if (names.length > 1 && names[0].length > 0 && names[names.length-1].length > 0) {
+    return names[0][0].toUpperCase() + names[names.length - 1][0].toUpperCase();
+  }
+  return 'U';
 };
 
 export default function ProfilePage() {

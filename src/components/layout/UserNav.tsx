@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -16,12 +17,13 @@ import { Settings, User, LogOut, DollarSign } from 'lucide-react';
 
 // Dummy user data - replace with actual auth state
 const user = {
-  name: 'Peter Damiano',
-  email: 'peterdamiano12masterpro@gmail.com',
-  imageUrl: '', // Add a placeholder or actual image URL
+  name: 'Current User', // Changed from Peter Damiano
+  email: 'user@example.com', // Changed
+  imageUrl: '', 
 };
 
 const getInitials = (name: string) => {
+  if (!name) return 'U';
   const names = name.split(' ');
   if (names.length === 1) return names[0][0].toUpperCase();
   return names[0][0].toUpperCase() + names[names.length - 1][0].toUpperCase();
@@ -30,7 +32,7 @@ const getInitials = (name: string) => {
 
 export function UserNav() {
   // In a real app, replace this with actual authentication logic
-  const isAuthenticated = true; 
+  const isAuthenticated = false; // Changed to false by default
 
   if (!isAuthenticated) {
     return (
