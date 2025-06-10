@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -38,6 +39,10 @@
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 291 50% 25%;
     --sidebar-ring: 340 82% 52%;
+
+    /* Default Font Families */
+    --font-family-body: 'Alegreya', serif;
+    --font-family-headline: 'Belleza', sans-serif;
   }
 
   .dark {
@@ -74,6 +79,45 @@
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 291 25% 10%;
     --sidebar-ring: 340 82% 62%;
+
+    /* Default Font Families for Dark Mode (can be same or different) */
+    --font-family-body: 'Alegreya', serif;
+    --font-family-headline: 'Belleza', sans-serif;
+  }
+
+  /* Font Theme Overrides */
+  body[data-font-theme="default"] {
+    --font-family-body: 'Alegreya', serif;
+    --font-family-headline: 'Belleza', sans-serif;
+  }
+  body[data-font-theme="inter"] {
+    --font-family-body: 'Inter', sans-serif;
+    --font-family-headline: 'Inter', sans-serif;
+  }
+  body[data-font-theme="roboto"] {
+    --font-family-body: 'Roboto', sans-serif;
+    --font-family-headline: 'Roboto', sans-serif;
+  }
+  body[data-font-theme="poppins"] {
+    --font-family-body: 'Poppins', sans-serif;
+    --font-family-headline: 'Poppins', sans-serif;
+  }
+  body[data-font-theme="merriweather"] {
+    --font-family-body: 'Merriweather', serif;
+    --font-family-headline: 'Merriweather', serif;
+  }
+  body[data-font-theme="playfair"] {
+    /* Playfair Display is often better for headlines, paired with a simpler body */
+    --font-family-body: 'Alegreya', serif; /* Example: keeping Alegreya for body */
+    --font-family-headline: 'Playfair Display', serif;
+  }
+  body[data-font-theme="lobster"] {
+    --font-family-body: 'Alegreya', serif; /* Lobster is very decorative, better for headlines */
+    --font-family-headline: 'Lobster', cursive;
+  }
+  body[data-font-theme="caveat"] {
+    --font-family-body: 'Caveat', cursive;
+    --font-family-headline: 'Caveat', cursive;
   }
 }
 
@@ -83,6 +127,11 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-family-body); /* Apply body font */
+  }
+  /* Ensure headlines use the headline font by targeting specific elements or using a class */
+  h1, h2, h3, h4, h5, h6, .font-headline {
+    font-family: var(--font-family-headline);
   }
 }
 

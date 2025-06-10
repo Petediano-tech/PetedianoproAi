@@ -4,6 +4,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from '@/components/theme-provider';
 import { OnlineStatusProvider } from '@/context/OnlineStatusProvider';
+import { FontProvider } from '@/components/providers/FontProvider'; // Added FontProvider
+import { AVAILABLE_FONTS } from '@/lib/fonts.config';
 
 export const metadata: Metadata = {
   title: 'Petediano Pro',
@@ -13,15 +15,22 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.Node;
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Belleza&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet" />
+        {/* Original fonts - Belleza and Alegreya are handled by their specific theme or default */}
+        {/* New fonts */}
+        {AVAILABLE_FONTS.filter(font => font.key !== 'default').map(font => {
+          const urls = [];
+          if (font.googleImportUrl) urls.push(font.googleImportUrl);
+          if (font.googleImportUrlBody && font.googleImportUrlBody !== font.googleImportUrl) urls.push(font.googleImportUrlBody);
+          if (font.googleImportUrlHeadline && font.googleImportUrlHeadline !== font.googleImportUrl && font.googleImportUrlHeadline !== font.googleImportUrlBody) urls.push(font.googleImportUrlHeadline);
+          return urls.map(url => <link key={url} href={url} rel="stylesheet" />);
+        })}
       </head>
       <body className="font-body antialiased min-h-screen flex flex-col">
         <ThemeProvider
@@ -30,9 +39,11 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
         >
-          <OnlineStatusProvider>
-            {children}
-          </OnlineStatusProvider>
+          <FontProvider> {/* Added FontProvider */}
+            <OnlineStatusProvider>
+              {children}
+            </OnlineStatusProvider>
+          </FontProvider>
           <Toaster />
         </ThemeProvider>
       </body>

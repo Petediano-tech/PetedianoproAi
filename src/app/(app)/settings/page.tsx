@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -12,6 +13,8 @@ import { Upload, Trash2, Palette, Type, User, ShieldCheck, Moon, Sun } from 'luc
 import { ModeToggle } from '@/components/ModeToggle';
 import { useTheme } from 'next-themes';
 import { toast } from '@/hooks/use-toast';
+import { useFontTheme } from '@/hooks/useFontTheme'; // Added
+import { AVAILABLE_FONTS, DEFAULT_FONT_THEME_KEY } from '@/lib/fonts.config'; // Added
 
 // Dummy user data and functions - replace with actual auth and state management
 const user = {
@@ -28,7 +31,9 @@ const getInitials = (name: string) => {
 };
 
 export default function SettingsPage() {
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme(); // Removed setTheme as it's in ModeToggle
+  const { fontThemeKey, setFontTheme } = useFontTheme(); // Use new font hook
+
   const [name, setName] = useState(user.name);
   const [username, setUsername] = useState(user.username);
   const [email, setEmail] = useState(user.email);
@@ -38,7 +43,6 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [deleteAccountPassword, setDeleteAccountPassword] = useState('');
-  const [selectedFont, setSelectedFont] = useState<'Belleza' | 'Alegreya' | 'Inter'>('Belleza'); // Conceptual
 
   const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -130,18 +134,18 @@ export default function SettingsPage() {
             </div>
           </div>
           <div>
-            <Label htmlFor="font-select">Application Font (Conceptual)</Label>
-            <Select value={selectedFont} onValueChange={(v) => setSelectedFont(v as any)}>
+            <Label htmlFor="font-select">Application Font Theme</Label>
+            <Select value={fontThemeKey} onValueChange={setFontTheme}>
               <SelectTrigger id="font-select">
-                <SelectValue placeholder="Select font" />
+                <SelectValue placeholder="Select font theme" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Belleza">Belleza (Headlines)</SelectItem>
-                <SelectItem value="Alegreya">Alegreya (Body)</SelectItem>
-                <SelectItem value="Inter">Inter (System Default)</SelectItem>
+                {AVAILABLE_FONTS.map(font => (
+                  <SelectItem key={font.key} value={font.key}>{font.name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground mt-1">Note: Actual font application might require page reload or more complex state management.</p>
+            <p className="text-xs text-muted-foreground mt-1">Changes how text and headlines appear across the app.</p>
           </div>
         </CardContent>
       </Card>

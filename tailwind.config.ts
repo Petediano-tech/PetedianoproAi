@@ -1,3 +1,4 @@
+
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -10,9 +11,20 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Alegreya', 'serif'],
-        headline: ['Belleza', 'sans-serif'],
+        // These now use CSS variables, with fallbacks
+        body: ['var(--font-family-body)', 'Alegreya', 'serif'],
+        headline: ['var(--font-family-headline)', 'Belleza', 'sans-serif'],
         code: ['monospace'],
+        // Add new font families for utility classes if needed directly
+        alegreya: ['Alegreya', 'serif'],
+        belleza: ['Belleza', 'sans-serif'],
+        inter: ['Inter', 'sans-serif'],
+        roboto: ['Roboto', 'sans-serif'],
+        poppins: ['Poppins', 'sans-serif'],
+        merriweather: ['Merriweather', 'serif'],
+        playfair: ['Playfair Display', 'serif'],
+        lobster: ['Lobster', 'cursive'],
+        caveat: ['Caveat', 'cursive'],
       },
       colors: {
         background: 'hsl(var(--background))',
