@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Film, Sparkles, Loader2, Palette, Drama, Mic, Eye, Move } from "lucide-react";
+import { Film, Sparkles, Loader2, Palette, Drama, Mic, Eye, Move, Download } from "lucide-react";
 import Image from "next/image";
 import { generateAnimationConcept, type GenerateAnimationConceptInput, type GenerateAnimationConceptOutput } from '@/ai/flows/generate-animation-concept';
 import { toast } from '@/hooks/use-toast';
@@ -68,6 +68,30 @@ export default function AnimationGeneratorPage() {
       setProgressValue(100);
       setIsLoading(false);
       setTimeout(() => setProgressValue(0), 1500);
+    }
+  };
+
+  const handleDownloadConcept = () => {
+    if (!generatedConcept) {
+      toast({ title: "Error", description: "No concept generated to download.", variant: "destructive"});
+      return;
+    }
+    try {
+      const jsonString = JSON.stringify(generatedConcept, null, 2);
+      const blob = new Blob([jsonString], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const safeTitle = generatedConcept.animationTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      link.download = `${safeTitle || 'animation_concept'}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast({ title: "Success", description: "Concept JSON downloaded." });
+    } catch (error) {
+      console.error("Error downloading concept:", error);
+      toast({ title: "Error", description: "Failed to download concept.", variant: "destructive" });
     }
   };
 
@@ -180,7 +204,9 @@ export default function AnimationGeneratorPage() {
                   </div>
                 </div>
                 <CardFooter className="justify-center pt-6 border-t">
-                    <Button variant="outline">Download Concept (Soon)</Button>
+                    <Button variant="outline" onClick={handleDownloadConcept} disabled={!generatedConcept}>
+                        <Download className="mr-2 h-4 w-4" /> Download Concept (JSON)
+                    </Button>
                 </CardFooter>
               </div>
               </ScrollArea>
