@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -99,10 +100,10 @@ export function NavLinks() {
                         )}
                         tooltip={{ children: subItem.label }}
                       >
-                        <a>
+                        <>
                           <subItem.icon className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
                           <span className="group-data-[collapsible=icon]:hidden">{subItem.label}</span>
-                        </a>
+                        </>
                       </SidebarMenuButton>
                     </Link>
                   </li>
@@ -122,10 +123,10 @@ export function NavLinks() {
               )}
               tooltip={{ children: item.label }}
             >
-              <a>
+              <>
                 <item.icon className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
                 <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
-              </a>
+              </>
             </SidebarMenuButton>
           </Link>
         );
