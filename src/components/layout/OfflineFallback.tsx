@@ -4,8 +4,18 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import PetedianoPSGame from '@/components/games/PetedianoPSGame';
-import { WifiOff, Gamepad2 } from 'lucide-react';
+import { WifiOff, Gamepad2, Loader2 } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const PetedianoPSGame = dynamic(() => import('@/components/games/PetedianoPSGame'), {
+  loading: () => (
+    <div className="flex flex-col items-center justify-center h-[400px] w-[300px] bg-muted rounded-md border border-primary">
+      <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+      <p className="text-primary">Loading Game...</p>
+    </div>
+  ),
+  ssr: false, // The game is likely client-side only
+});
 
 export default function OfflineFallback() {
   const [showGame, setShowGame] = useState(false);
