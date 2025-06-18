@@ -99,7 +99,7 @@ export function NavLinks() {
                         )}
                         tooltip={{ children: subItem.label }}
                       >
-                        <span> {/* Wrapper span for the content of asChild */}
+                        <span>
                           <subItem.icon className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
                           <span className="group-data-[collapsible=icon]:hidden">{subItem.label}</span>
                         </span>
@@ -122,7 +122,7 @@ export function NavLinks() {
               )}
               tooltip={{ children: item.label }}
             >
-              <span> {/* Wrapper span for the content of asChild */}
+              <span>
                 <item.icon className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
                 <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
               </span>

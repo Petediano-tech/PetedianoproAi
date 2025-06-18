@@ -17,8 +17,8 @@ import { Settings, User, LogOut, DollarSign } from 'lucide-react';
 
 // Dummy user data - replace with actual auth state
 const user = {
-  name: 'Current User', // Changed from Peter Damiano
-  email: 'user@example.com', // Changed
+  name: 'Your Name', // Changed from Peter Damiano
+  email: 'your.email@example.com', // Changed
   imageUrl: '', 
 };
 

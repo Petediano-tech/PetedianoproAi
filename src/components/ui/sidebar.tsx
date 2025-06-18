@@ -207,10 +207,7 @@ const Sidebar = React.forwardRef<
             }
             side={side}
           >
-            {/* Add an accessible title for the sheet */}
-            <SheetTitle className="sr-only">
-              Main Navigation
-            </SheetTitle>
+             <SheetTitle className="sr-only">Main Navigation</SheetTitle>
             <div className="flex h-full w-full flex-col">{children}</div>
           </SheetContent>
         </Sheet>
