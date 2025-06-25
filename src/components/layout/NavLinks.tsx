@@ -24,7 +24,8 @@ import {
   Share2 as ShareIcon,
   Users,
   Brain,
-  Lightbulb
+  Lightbulb,
+  Gamepad2
 } from 'lucide-react';
 import { SidebarMenuButton } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
@@ -56,6 +57,7 @@ const navItems = [
       { href: '/specialized-ai/what-if-scenario', label: '"What If" Scenarios', icon: Lightbulb },
     ],
   },
+  { href: '/game', label: 'Play a Game', icon: Gamepad2 },
   { type: 'separator' },
   { href: '/settings', label: 'Settings', icon: Settings },
   { href: '/vip', label: 'VIP', icon: DollarSign },

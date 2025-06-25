@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -9,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from '@/components/ui/separator';
-import { Upload, Trash2, Palette, Type, User, ShieldCheck, Moon, Sun, Volume2, VolumeX, Zap, Music, Disc3, Gamepad2 } from 'lucide-react';
+import { Upload, Trash2, Palette, Type, User, ShieldCheck, Moon, Sun, Volume2, VolumeX, Zap, Music, Disc3 } from 'lucide-react';
 import { ModeToggle } from '@/components/ModeToggle';
 import { useTheme } from 'next-themes';
 import { toast } from '@/hooks/use-toast';
@@ -19,19 +18,6 @@ import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { updateMasterVolume } from '@/utils/audioPlayer';
-import dynamic from 'next/dynamic';
-import { Loader2 } from 'lucide-react';
-
-const PetedianoPSGame = dynamic(() => import('@/components/games/PetedianoPSGame'), {
-  loading: () => (
-    <div className="flex flex-col items-center justify-center h-[400px] w-[300px] bg-muted rounded-md border">
-      <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-      <p>Loading Game...</p>
-    </div>
-  ),
-  ssr: false,
-});
-
 
 // Dummy user data and functions - replace with actual auth and state management
 const user = {
@@ -248,19 +234,6 @@ export default function SettingsPage() {
             </div>
             <p className="text-xs text-muted-foreground mt-1">Enable or disable vibration when typing in text fields (feature coming soon).</p>
           </div>
-        </CardContent>
-      </Card>
-      
-      {/* Mini-Game */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-headline text-xl flex items-center"><Gamepad2 className="mr-2 h-5 w-5 text-primary" />Just for Fun: Petediano PS</CardTitle>
-          <CardDescription>
-            Take a break with this simple mini-game. It's built right into the app and uses no mobile data to play.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex justify-center">
-            <PetedianoPSGame />
         </CardContent>
       </Card>
 
