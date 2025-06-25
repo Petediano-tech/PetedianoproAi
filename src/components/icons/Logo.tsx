@@ -18,7 +18,7 @@ export function Logo(props: SVGProps<SVGSVGElement>) {
         </linearGradient>
       </defs>
       
-      <g className="animate-pete">
+      <g className="animate-pete-hide">
         <text
           x="10"
           y="35"
@@ -30,7 +30,7 @@ export function Logo(props: SVGProps<SVGSVGElement>) {
           Pete
         </text>
       </g>
-      <g className="animate-diano">
+      <g className="animate-diano-hide">
         <text
           x="68"
           y="35"
@@ -42,7 +42,7 @@ export function Logo(props: SVGProps<SVGSVGElement>) {
           diano
         </text>
       </g>
-      <g className="animate-pro">
+      <g className="animate-pro-move">
         <text
           x="148"
           y="35"

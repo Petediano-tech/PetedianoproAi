@@ -161,30 +161,31 @@
     animation: loading-bar-animation 1.5s ease-in-out;
   }
 
-  @keyframes move-pete-up {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-2px); }
-  }
-
-  @keyframes move-diano-down {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(2px); }
-  }
-
-  @keyframes move-pro-right-left {
+  /* New Logo Animations */
+  @keyframes pro-move {
     0%, 100% { transform: translateX(0); }
-    50% { transform: translateX(-20px); }
+    50% { transform: translateX(-140px); }
   }
 
-  .animate-pete {
-    animation: move-pete-up 4s ease-in-out infinite;
+  @keyframes diano-hide {
+    0%, 100% { opacity: 1; }
+    20%, 80% { opacity: 0; }
   }
 
-  .animate-diano {
-    animation: move-diano-down 4s ease-in-out infinite;
+  @keyframes pete-hide {
+    0%, 100% { opacity: 1; }
+    30%, 70% { opacity: 0; }
   }
 
-  .animate-pro {
-    animation: move-pro-right-left 4s ease-in-out infinite;
+  .animate-pro-move {
+    animation: pro-move 5s ease-in-out infinite;
+  }
+
+  .animate-diano-hide {
+    animation: diano-hide 5s ease-in-out infinite;
+  }
+
+  .animate-pete-hide {
+    animation: pete-hide 5s ease-in-out infinite;
   }
 }
