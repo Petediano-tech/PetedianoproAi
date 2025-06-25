@@ -9,6 +9,7 @@ export function Logo(props: SVGProps<SVGSVGElement>) {
       width="150"
       height="37.5"
       aria-label="Petediano Pro Logo"
+      className="animate-in fade-in duration-1000"
       {...props}
     >
       <defs>
@@ -25,8 +26,8 @@ export function Logo(props: SVGProps<SVGSVGElement>) {
         fill="url(#logoGradient)"
         fontWeight="bold"
       >
-        <tspan className="inline-block animate-logo-pete">Pete</tspan>
-        <tspan className="inline-block animate-logo-diano">diano</tspan>
+        <tspan>Pete</tspan>
+        <tspan>diano</tspan>
       </text>
       <text
         x="148"
@@ -35,7 +36,6 @@ export function Logo(props: SVGProps<SVGSVGElement>) {
         fontSize="20"
         fill="hsl(var(--foreground))"
         opacity="0.8"
-        className="animate-logo-pro"
       >
         Pro
       </text>

@@ -71,15 +71,6 @@ export default function ProfilePage() {
                 </div>
             </div>
           </div>
-
-          {/* Placeholder for user's activity or creations */}
-          <div>
-            <h3 className="font-semibold text-accent mb-2">My Creations (Coming Soon)</h3>
-            <div className="p-4 text-center text-muted-foreground border rounded-md bg-secondary/10">
-              Your generated content and activity will appear here.
-            </div>
-          </div>
-
         </CardContent>
       </Card>
     </div>

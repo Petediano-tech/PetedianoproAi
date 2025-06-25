@@ -63,19 +63,19 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <Link href="/settings">
-            <DropdownMenuItem>
-              <Settings className="mr-2 h-4 w-4" />
+          <Link href="/settings" passHref>
+            <DropdownMenuItem className="group">
+              <Settings className="mr-2 h-4 w-4 transition-transform duration-300 group-hover:rotate-180" />
               <span>Settings</span>
             </DropdownMenuItem>
           </Link>
-          <Link href="/profile">
+          <Link href="/profile" passHref>
             <DropdownMenuItem>
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
             </DropdownMenuItem>
           </Link>
-          <Link href="/vip">
+          <Link href="/vip" passHref>
             <DropdownMenuItem>
               <DollarSign className="mr-2 h-4 w-4" />
               <span>VIP Membership</span>

@@ -5,13 +5,13 @@ import Link from "next/link";
 import { 
     ArrowRight, Edit3, Sparkles, ImageIcon, FileText, Bot, MessageSquare, 
     Settings, DollarSign, Film, Video, Newspaper, Presentation, Share2 as ShareIcon, 
-    Users, Brain, Lightbulb 
+    Users, Brain, Lightbulb, Gamepad2
 } from "lucide-react";
 
 const mainFeatures = [
   { title: "AI Photo Editor", description: "Enhance and edit your photos.", icon: Edit3, href: "/photo-editor" },
   { title: "AI Picture Generator", description: "Generate unique images.", icon: ImageIcon, href: "/picture-generator" },
-  { title: "Anime Story Generator", description: "Create stories with images.", icon: Film, href: "/animation-generator" },
+  { title: "AI Anime Story Generator", description: "Create stories with images.", icon: Film, href: "/animation-generator" },
   { title: "File Analyzer", description: "Analyze uploaded files.", icon: FileText, href: "/file-analyzer" },
   { title: "PeteAI Assistant", description: "Your AI-powered assistant.", icon: Bot, href: "/assistant" },
 ];
@@ -35,17 +35,18 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <div className="bg-card p-6 rounded-lg shadow-md">
-        <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">
-          Welcome to your Dashboard!
+        <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary animate-in fade-in slide-in-from-bottom-2 duration-500">
+          Welcome to Your Dashboard!
         </h1>
-        <p className="mt-2 text-lg text-muted-foreground">
-          Ready to create something amazing today? Explore your AI toolkit below.
+        <p className="mt-2 text-lg text-muted-foreground animate-in fade-in slide-in-from-bottom-2 duration-500 delay-150">
+          Ready to create something amazing? Explore your AI toolkit below.
         </p>
       </div>
 
       <Section title="Core Tools" features={mainFeatures} />
       <Section title="Content Generation Suite" features={contentGenerationFeatures} />
       <Section title="Specialized AI Tools" features={specializedAIFeatures} />
+      <Section title="Games & Fun" features={[{ title: "Game Center", description: "Play a fun game of Tic-Tac-Toe.", icon: Gamepad2, href: "/game" }]} />
 
       <div className="grid gap-6 md:grid-cols-2">
          <Card className="hover:shadow-lg transition-shadow">
@@ -112,7 +113,7 @@ function Section({ title, features }: SectionProps) {
               </div>
               <CardDescription className="pt-2">{feature.description}</CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow" /> {/* Pushes button to bottom */}
+            <CardContent className="flex-grow" />
             <CardContent>
               <Link href={feature.href}>
                 <Button className="w-full">
