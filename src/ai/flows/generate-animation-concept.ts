@@ -155,7 +155,7 @@ const generateAnimeStoryFlow = ai.defineFlow(
         }),
       ]);
       
-      const imageUrl = imageGenerationResult.media.url;
+      const imageUrl = imageGenerationResult.media?.url;
       const pcmAudioData = audioGenerationResult.media?.url;
       let audioUrl = '';
 
