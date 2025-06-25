@@ -78,8 +78,8 @@ export default function HomePage() {
         <main className="flex-1">
           <section className="py-16 md:py-24 lg:py-32 text-center bg-gradient-to-b from-background to-background/80">
             <div className="container">
-              <h1 className="font-headline text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-primary">
-                Welcome to Petediano Pro
+              <h1 className="font-headline text-4xl md:text-5xl font-bold tracking-tight animated-gradient-text">
+                Welcome to Petediano
               </h1>
               <p className="mt-6 max-w-2xl mx-auto text-lg md:text-xl text-foreground/80">
                 Unleash your creativity with a suite of powerful AI tools designed by Peter Damiano. Edit photos, generate content, analyze files, and much more, all in one professional application.
