@@ -13,7 +13,7 @@ import {z} from 'genkit';
 
 const animeStyles = ['Vibrant Shonen', 'Elegant Shojo', 'Chibi/Kawaii', 'Classic 90s', 'Dark Fantasy', 'Cyberpunk', 'Studio Ghibli-esque'] as const;
 
-export const GenerateAnimationConceptInputSchema = z.object({
+const GenerateAnimationConceptInputSchema = z.object({
   prompt: z.string().describe('The main idea or scene for the story (e.g., "a cat who discovers a magical sword", "a detective solving a case in a cyberpunk city").'),
   style: z.enum(animeStyles).default('Vibrant Shonen').describe('The desired anime art style for the generated images.'),
 });
@@ -24,7 +24,7 @@ const StoryPageSchema = z.object({
   imageUrl: z.string().describe('Data URI of the generated image for this page.'),
 });
 
-export const GenerateAnimationConceptOutputSchema = z.object({
+const GenerateAnimationConceptOutputSchema = z.object({
   title: z.string().describe('A catchy title for the story.'),
   pages: z.array(StoryPageSchema).describe('A sequence of pages, each with text and a generated image.'),
 });
