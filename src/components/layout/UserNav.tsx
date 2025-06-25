@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -45,11 +44,9 @@ export function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={user.imageUrl || `https://placehold.co/100x100.png`} alt={user.name} data-ai-hint="profile avatar" />
-            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-          </Avatar>
+        <Button variant="ghost" size="icon" className="group">
+          <Settings className="h-5 w-5 text-primary transition-transform duration-300 group-data-[state=open]:rotate-90" />
+          <span className="sr-only">Open user menu</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
