@@ -17,8 +17,8 @@ import { Settings, User, LogOut, DollarSign } from 'lucide-react';
 
 // Dummy user data - replace with actual auth state
 const user = {
-  name: 'Your Name', // Changed from Peter Damiano
-  email: 'your.email@example.com', // Changed
+  name: 'Your Name',
+  email: 'your.email@example.com',
   imageUrl: '', 
 };
 
@@ -32,7 +32,7 @@ const getInitials = (name: string) => {
 
 export function UserNav() {
   // In a real app, replace this with actual authentication logic
-  const isAuthenticated = false; // Changed to false by default
+  const isAuthenticated = true; // Set to true to always show the user menu
 
   if (!isAuthenticated) {
     return (
