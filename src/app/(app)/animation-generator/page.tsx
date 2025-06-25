@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Film, Sparkles, Loader2, BookOpen, Download, Music } from "lucide-react";
 import Image from "next/image";
-import { generateAnimationConcept, availableVoices, type GenerateAnimationConceptInput, type GenerateAnimationConceptOutput } from '@/ai/flows/generate-animation-concept';
+import { generateAnimationConcept, type GenerateAnimationConceptInput, type GenerateAnimationConceptOutput } from '@/ai/flows/generate-animation-concept';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
@@ -19,6 +19,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 
 const animeStyles = ['Vibrant Shonen', 'Elegant Shojo', 'Chibi/Kawaii', 'Classic 90s', 'Dark Fantasy', 'Cyberpunk', 'Studio Ghibli-esque'];
+const availableVoices = {
+  // Male Voices
+  'Algenib': 'Algenib',
+  'Achernar': 'Achernar',
+  'Spica': 'Spica',
+  'Sirius': 'Sirius',
+  'Canopus': 'Canopus',
+  'Deneb': 'Deneb',
+  'Hadar': 'Hadar',
+  'Regulus': 'Regulus',
+  // Female Voices
+  'Antares': 'Antares',
+  'Capella': 'Capella',
+} as const;
 const voiceList = Object.keys(availableVoices) as (keyof typeof availableVoices)[];
 
 export default function AnimeStoryGeneratorPage() {
@@ -45,19 +59,35 @@ export default function AnimeStoryGeneratorPage() {
   };
   
   const handleDownload = (dataUri: string, filename: string) => {
+    if (!dataUri) {
+        toast({
+            title: 'Download Error',
+            description: 'No data available to download.',
+            variant: 'destructive',
+        });
+        return;
+    }
     const link = document.createElement('a');
     link.href = dataUri;
     link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
   };
   
   const handleDownloadText = (text: string, filename: string) => {
+    if (!text) {
+        toast({
+            title: 'Download Error',
+            description: 'No text available to download.',
+            variant: 'destructive',
+        });
+        return;
+    }
     const blob = new Blob([text], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     handleDownload(url, filename);
+    URL.revokeObjectURL(url); // Clean up the object URL
   };
 
 

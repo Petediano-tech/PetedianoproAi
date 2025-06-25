@@ -14,7 +14,7 @@ import wav from 'wav';
 import {googleAI} from '@genkit-ai/googleai';
 
 const animeStyles = ['Vibrant Shonen', 'Elegant Shojo', 'Chibi/Kawaii', 'Classic 90s', 'Dark Fantasy', 'Cyberpunk', 'Studio Ghibli-esque'] as const;
-export const availableVoices = {
+const availableVoices = {
   // Male Voices
   'Algenib': 'Algenib',
   'Achernar': 'Achernar',
@@ -148,7 +148,7 @@ const generateAnimeStoryFlow = ai.defineFlow(
             responseModalities: ['AUDIO'],
             speechConfig: {
               voiceConfig: {
-                prebuiltVoiceConfig: { voiceName: input.voice },
+                prebuiltVoiceConfig: { voiceName: input.voice as any },
               },
             },
           },
