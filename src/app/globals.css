@@ -160,4 +160,31 @@
   .animate-loading-bar {
     animation: loading-bar-animation 1.5s ease-in-out;
   }
+
+  @keyframes move-pete-up {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
+  }
+
+  @keyframes move-diano-down {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(2px); }
+  }
+
+  @keyframes move-pro-right-left {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(-20px); }
+  }
+
+  .animate-pete {
+    animation: move-pete-up 4s ease-in-out infinite;
+  }
+
+  .animate-diano {
+    animation: move-diano-down 4s ease-in-out infinite;
+  }
+
+  .animate-pro {
+    animation: move-pro-right-left 4s ease-in-out infinite;
+  }
 }

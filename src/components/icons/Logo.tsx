@@ -9,7 +9,6 @@ export function Logo(props: SVGProps<SVGSVGElement>) {
       width="150"
       height="37.5"
       aria-label="Petediano Pro Logo"
-      className="animate-in fade-in duration-1000"
       {...props}
     >
       <defs>
@@ -18,27 +17,43 @@ export function Logo(props: SVGProps<SVGSVGElement>) {
           <stop offset="100%" style={{ stopColor: 'hsl(var(--accent))', stopOpacity: 1 }} />
         </linearGradient>
       </defs>
-      <text
-        x="10"
-        y="35"
-        fontFamily="Belleza, sans-serif"
-        fontSize="30"
-        fill="url(#logoGradient)"
-        fontWeight="bold"
-      >
-        <tspan>Pete</tspan>
-        <tspan>diano</tspan>
-      </text>
-      <text
-        x="148"
-        y="35"
-        fontFamily="Alegreya, serif"
-        fontSize="20"
-        fill="hsl(var(--foreground))"
-        opacity="0.8"
-      >
-        Pro
-      </text>
+      
+      <g className="animate-pete">
+        <text
+          x="10"
+          y="35"
+          fontFamily="Belleza, sans-serif"
+          fontSize="30"
+          fill="url(#logoGradient)"
+          fontWeight="bold"
+        >
+          Pete
+        </text>
+      </g>
+      <g className="animate-diano">
+        <text
+          x="68"
+          y="35"
+          fontFamily="Belleza, sans-serif"
+          fontSize="30"
+          fill="url(#logoGradient)"
+          fontWeight="bold"
+        >
+          diano
+        </text>
+      </g>
+      <g className="animate-pro">
+        <text
+          x="148"
+          y="35"
+          fontFamily="Alegreya, serif"
+          fontSize="20"
+          fill="hsl(var(--foreground))"
+          opacity="0.8"
+        >
+          Pro
+        </text>
+      </g>
     </svg>
   );
 }
