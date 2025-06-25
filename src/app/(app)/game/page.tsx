@@ -12,7 +12,7 @@ export default function GamePage() {
           <CardTitle className="font-headline text-3xl text-primary flex items-center">
             <Gamepad2 className="mr-3 h-8 w-8" /> Game Center
           </CardTitle>
-          <CardDescription>Take a break and play a classic game of Tic-Tac-Toe.</CardDescription>
+          <CardDescription>Challenge a friend or test your skills against the computer in a classic game of Tic-Tac-Toe.</CardDescription>
         </CardHeader>
       </Card>
 

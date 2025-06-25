@@ -52,6 +52,49 @@ export function playNotificationSound(settings: Pick<SoundSettings, 'isGlobalMut
   }
 }
 
+export function playWinSound(settings: Pick<SoundSettings, 'isGlobalMuted' | 'globalVolume'>) {
+  const context = getAudioContext();
+  if (!context || !masterGainNode || settings.isGlobalMuted) {
+    return;
+  }
+
+  if (context.state === 'suspended') {
+    context.resume().catch(err => console.error("Error resuming AudioContext:", err));
+  }
+  
+  masterGainNode.gain.setValueAtTime(settings.globalVolume, context.currentTime);
+
+  try {
+    const now = context.currentTime;
+    // C-major arpeggio: C5, E5, G5, C6
+    const tones = [523.25, 659.25, 783.99, 1046.50];
+    let startTime = now;
+
+    tones.forEach((tone) => {
+        const osc = context.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(tone, startTime);
+        
+        const env = context.createGain();
+        env.connect(masterGainNode);
+        
+        env.gain.setValueAtTime(0, startTime);
+        env.gain.linearRampToValueAtTime(0.15, startTime + 0.01);
+        env.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.12);
+
+        osc.connect(env);
+        osc.start(startTime);
+        osc.stop(startTime + 0.12);
+
+        startTime += 0.1; // Stagger the start time for each note
+    });
+
+  } catch (error) {
+     console.error("Error playing win sound with Web Audio API:", error);
+  }
+}
+
+
 // Function to update master volume if context is already initialized
 export function updateMasterVolume(volume: number) {
   const context = getAudioContext();
