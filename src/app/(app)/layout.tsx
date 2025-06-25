@@ -24,7 +24,7 @@ export default function AppLayout({
 }) {
   return (
     <SidebarProvider defaultOpen>
-      <GlobalLoadingIndicator /> {/* Added component here */}
+      <GlobalLoadingIndicator />
       <div className="flex min-h-screen">
         <Sidebar className="bg-sidebar text-sidebar-foreground" collapsible="icon">
           <SidebarHeader className="p-4 border-b border-sidebar-border">

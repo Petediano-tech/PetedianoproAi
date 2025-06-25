@@ -11,7 +11,6 @@ import {
   Bot,
   Sparkles,
   MessageSquare,
-  Settings,
   DollarSign,
   Info,
   HelpCircle,
