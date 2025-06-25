@@ -92,6 +92,9 @@ Language: {{{language}}}
 
 Generate a title and scene descriptions in the specified language.
 `,
+  config: {
+    temperature: 0.9,
+  },
 });
 
 // 2. A prompt to generate the image for a given scene.
@@ -106,7 +109,10 @@ const storyPageTextPrompt = ai.definePrompt({
     output: { schema: z.object({ pageText: z.string().describe('A paragraph of narrative text (about 50-100 words) describing the scene in an engaging way.') }) },
     prompt: `You are an anime scriptwriter. Write an engaging paragraph of story text for the following scene description in the language: "{{{language}}}".
 
-Scene Description: "{{{sceneDescription}}}"`
+Scene Description: "{{{sceneDescription}}}"`,
+    config: {
+        temperature: 0.9,
+    },
 });
 
 

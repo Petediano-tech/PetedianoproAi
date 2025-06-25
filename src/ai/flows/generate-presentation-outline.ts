@@ -78,6 +78,9 @@ Example desired lengths for 'slides' array:
 - Medium (6-10 slides content) -> ~8-12 total slides in array
 - Long (11-15 slides content) -> ~13-17 total slides in array
 `,
+  config: {
+    temperature: 0.7,
+  },
 });
 
 const generatePresentationOutlineFlow = ai.defineFlow(

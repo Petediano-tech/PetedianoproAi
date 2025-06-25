@@ -57,6 +57,9 @@ Please generate the following for the character:
 
 Ensure the persona is coherent and provides a strong foundation for storytelling or role-playing.
 `,
+  config: {
+    temperature: 0.9,
+  },
 });
 
 const generateCharacterPersonaFlow = ai.defineFlow(

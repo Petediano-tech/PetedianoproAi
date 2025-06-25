@@ -60,6 +60,9 @@ Then, for each of the requested 'numberOfVariations', generate a distinct 'Scena
 Ensure each scenario is distinct and explores different facets or possibilities arising from the point of divergence.
 Structure your output strictly according to the 'GenerateWhatIfScenarioOutputSchema'.
 `,
+  config: {
+    temperature: 0.9,
+  },
 });
 
 const generateWhatIfScenarioFlow = ai.defineFlow(

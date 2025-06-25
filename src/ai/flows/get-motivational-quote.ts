@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -44,7 +45,10 @@ const quotePrompt = ai.definePrompt({
   output: {schema: GetMotivationalQuoteOutputSchema},
   prompt: `You are a motivational quote generator. Generate an original motivational quote.  The topic of the quote should be related to {{topic}}.
 
-  Quote:`, // Keep as one line.
+  Quote:`,
+  config: {
+    temperature: 1.0,
+  },
 });
 
 const getMotivationalQuoteFlow = ai.defineFlow(
@@ -62,15 +66,10 @@ const getMotivationalQuoteFlow = ai.defineFlow(
     } else {
       // If textOnly is false, generate an image with the quote.
       const {media} = await ai.generate({
-        // IMPORTANT: ONLY the googleai/gemini-2.0-flash-exp model is able to generate images. You MUST use exactly this model to generate images.
-        model: 'googleai/gemini-2.0-flash-exp',
-        prompt: [
-          {
-            text: `Generate an image with the following motivational quote: ${output!.quote}`,
-          },
-        ],
+        model: 'googleai/gemini-2.0-flash-preview-image-generation',
+        prompt: `Generate an image with the following motivational quote on a beautiful, artistic background: "${output!.quote}"`,
         config: {
-          responseModalities: ['TEXT', 'IMAGE'], // MUST provide both TEXT and IMAGE, IMAGE only won't work
+          responseModalities: ['TEXT', 'IMAGE'],
         },
       });
 

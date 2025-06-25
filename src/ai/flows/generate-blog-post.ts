@@ -73,6 +73,9 @@ Ensure the language is appropriate for the 'targetAudience'.
 The blog post should be original, insightful, and provide value to the reader.
 Structure your output strictly according to the 'GenerateBlogPostOutputSchema'.
 `,
+  config: {
+    temperature: 0.8,
+  },
 });
 
 const generateBlogPostFlow = ai.defineFlow(

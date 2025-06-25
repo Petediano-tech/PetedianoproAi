@@ -82,6 +82,9 @@ Consider the 'Target Audience' when choosing language and examples.
 If 'Key Points' are provided, ensure they are naturally integrated into the script.
 Structure your output strictly according to the 'GenerateVideoScriptOutputSchema'.
 `,
+  config: {
+    temperature: 0.8,
+  },
 });
 
 const generateVideoScriptFlow = ai.defineFlow(

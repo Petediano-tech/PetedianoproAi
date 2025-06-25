@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -31,25 +32,6 @@ export async function generateOriginalPictures(input: GenerateOriginalPicturesIn
   return generateOriginalPicturesFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'generateOriginalPicturesPrompt',
-  input: {schema: GenerateOriginalPicturesInputSchema},
-  output: {schema: GenerateOriginalPicturesOutputSchema},
-  prompt: `Generate an original {{{type}}} with the following description: {{{prompt}}}.
-
-  {{#if text}}
-  Add the following text to the image: {{{text}}}. Use the font {{{font}}}.
-  {{/if}}
-
-  {{#if aspectRatio}}
-  Use the following aspect ratio: {{{aspectRatio}}}.
-  {{/if}}
-  
-  Ensure the generated image is of high quality and suitable for its intended purpose.
-  Return the image as a data URI.
-  `,
-});
-
 const generateOriginalPicturesFlow = ai.defineFlow(
   {
     name: 'generateOriginalPicturesFlow',
@@ -57,13 +39,23 @@ const generateOriginalPicturesFlow = ai.defineFlow(
     outputSchema: GenerateOriginalPicturesOutputSchema,
   },
   async input => {
+    // Construct a more detailed prompt for the image generation model to encourage originality.
+    let imagePrompt = `Generate a high-quality, original, and creative ${input.type}. `;
+    imagePrompt += `The theme is: "${input.prompt}". `;
+    if (input.aspectRatio) {
+      imagePrompt += `The aspect ratio should be ${input.aspectRatio}. `;
+    }
+    if (input.text) {
+      imagePrompt += `Incorporate the text "${input.text}" into the design.`;
+      if (input.font) {
+        imagePrompt += ` Use a font style similar to ${input.font}.`;
+      }
+    }
+    imagePrompt += " Avoid clichés and generate a unique visual.";
+
     const {media} = await ai.generate({
-      model: 'googleai/gemini-2.0-flash-exp',
-      prompt: [
-        input.prompt,
-        ...(input.text ? [{text: `Add the following text using ${input.font} font: ${input.text}`}] : []),
-        ...(input.aspectRatio ? [{text: `Use the following aspect ratio: ${input.aspectRatio}`}] : []),
-      ],
+      model: 'googleai/gemini-2.0-flash-preview-image-generation',
+      prompt: imagePrompt,
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
       },

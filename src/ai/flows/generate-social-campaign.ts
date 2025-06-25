@@ -86,6 +86,9 @@ Structure your output strictly according to the 'GenerateSocialCampaignOutputSch
 Focus on actionable and creative ideas.
 For hashtagSuggestions, do not include the '#' symbol.
 `,
+  config: {
+    temperature: 0.8,
+  },
 });
 
 const generateSocialCampaignFlow = ai.defineFlow(

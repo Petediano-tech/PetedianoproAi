@@ -78,6 +78,9 @@ Now, please answer the user's query helpfully and accurately based on all the in
 
 User's Query: {{{query}}}
 `,
+  config: {
+    temperature: 0.7,
+  },
 });
 
 const peteAiAssistantFlow = ai.defineFlow(
