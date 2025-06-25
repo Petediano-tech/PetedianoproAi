@@ -2,7 +2,7 @@
 "use client";
 
 const USAGE_STORAGE_KEY = 'petedianoProUsage';
-const VIP_STATUS_KEY = 'isPetedianoProVip';
+const VIP_INFO_KEY = 'petedianoProVipInfo'; // Use the same key as passkeys.ts
 const DAILY_LIMIT_PER_FEATURE = 5;
 
 interface DailyUsage {
@@ -11,6 +11,13 @@ interface DailyUsage {
 
 interface UsageData {
   [date: string]: DailyUsage;
+}
+
+interface VipInfo {
+  passkey: string;
+  type: 'monthly' | 'quarterly' | 'yearly' | 'lifetime';
+  activationDate: string;
+  expiryDate: string | null;
 }
 
 function getTodayDateString(): string {
@@ -45,19 +52,34 @@ function saveUsageData(data: UsageData): void {
 export function isUserVip(): boolean {
   if (typeof window === 'undefined') return false;
   try {
-    return localStorage.getItem(VIP_STATUS_KEY) === 'true';
+    const vipInfoRaw = localStorage.getItem(VIP_INFO_KEY);
+    if (!vipInfoRaw) {
+      return false;
+    }
+    
+    const vipInfo: VipInfo = JSON.parse(vipInfoRaw);
+
+    if (vipInfo.type === 'lifetime') {
+      return true;
+    }
+
+    if (vipInfo.expiryDate) {
+      const expiry = new Date(vipInfo.expiryDate);
+      if (expiry > new Date()) {
+        return true; // Still valid
+      } else {
+        // Membership has expired, clear the info
+        localStorage.removeItem(VIP_INFO_KEY);
+        return false;
+      }
+    }
+    
+    return false; // Should not happen if data is well-formed
   } catch (error) {
     console.error("Error reading VIP status from localStorage:", error);
+    // In case of parsing error, clear potentially corrupted data
+    localStorage.removeItem(VIP_INFO_KEY);
     return false;
-  }
-}
-
-export function setVipStatus(status: boolean): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(VIP_STATUS_KEY, status.toString());
-  } catch (error) {
-    console.error("Error saving VIP status to localStorage:", error);
   }
 }
 
