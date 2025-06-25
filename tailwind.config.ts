@@ -100,10 +100,25 @@ export default {
             height: '0',
           },
         },
+        'logo-pete': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-2px)' },
+        },
+        'logo-diano': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(2px)' },
+        },
+        'logo-pro': {
+          '0%, 100%': { transform: 'scale(1)', opacity: '0.8' },
+          '50%': { transform: 'scale(1.05)', opacity: '1' },
+        }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'logo-pete': 'logo-pete 3s ease-in-out infinite',
+        'logo-diano': 'logo-diano 3s ease-in-out infinite',
+        'logo-pro': 'logo-pro 3s ease-in-out infinite',
       },
     },
   },

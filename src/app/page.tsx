@@ -2,7 +2,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Sparkles, Edit3, Bot, FileText, ImageIcon, LogOut } from "lucide-react";
+import { ArrowRight, Sparkles, Edit3, Bot, FileText, ImageIcon, LogOut, Film } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Logo } from "@/components/icons/Logo";
@@ -10,9 +10,12 @@ import { ModeToggle } from "@/components/ModeToggle";
 import { AppHeader } from '@/components/layout/AppHeader';
 import { NavLinks } from '@/components/layout/NavLinks';
 import {
-  SidebarProvider, // Added import
+  SidebarProvider,
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarMenu,
 } from '@/components/ui/sidebar';
-import { useIsMobile } from '@/hooks/use-mobile'; // For conditional rendering of SidebarTrigger
 
 const features = [
   {
@@ -36,12 +39,12 @@ const features = [
     link: "/picture-generator",
     actionText: "Generate Images"
   },
-  {
-    icon: <FileText className="h-8 w-8 text-primary" />,
-    title: "AI File Analyzer",
-    description: "Understand your files better with AI-powered analysis and text extraction.",
-    link: "/file-analyzer",
-    actionText: "Analyze Files"
+    {
+    icon: <Film className="h-8 w-8 text-primary" />,
+    title: "AI Anime Story Generator",
+    description: "Create anime-style stories, complete with beautifully generated images.",
+    link: "/animation-generator",
+    actionText: "Generate a Story"
   },
   {
     icon: <Bot className="h-8 w-8 text-primary" />,
@@ -53,12 +56,25 @@ const features = [
 ];
 
 export default function HomePage() {
-  const isMobile = useIsMobile();
-
   return (
-    <SidebarProvider> {/* Added SidebarProvider wrapper */}
+    <SidebarProvider>
       <div className="flex flex-col min-h-screen">
         <AppHeader />
+        
+        {/* Mobile Sidebar (Sheet) logic is handled by the Sidebar component */}
+        <Sidebar className="bg-sidebar text-sidebar-foreground">
+          <SidebarHeader className="p-4 border-b border-sidebar-border">
+            <Link href="/" className="flex items-center">
+              <Logo className="h-8 w-auto fill-sidebar-foreground" />
+            </Link>
+          </SidebarHeader>
+          <SidebarContent className="p-2">
+            <SidebarMenu>
+              <NavLinks />
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+
         <main className="flex-1">
           <section className="py-16 md:py-24 lg:py-32 text-center bg-gradient-to-b from-background to-background/80">
             <div className="container">

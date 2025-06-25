@@ -11,7 +11,7 @@ import {
 const mainFeatures = [
   { title: "AI Photo Editor", description: "Enhance and edit your photos.", icon: Edit3, href: "/photo-editor" },
   { title: "AI Picture Generator", description: "Generate unique images.", icon: ImageIcon, href: "/picture-generator" },
-  { title: "Animation Generator", description: "Create animation concepts.", icon: Film, href: "/animation-generator" },
+  { title: "Anime Story Generator", description: "Create stories with images.", icon: Film, href: "/animation-generator" },
   { title: "File Analyzer", description: "Analyze uploaded files.", icon: FileText, href: "/file-analyzer" },
   { title: "PeteAI Assistant", description: "Your AI-powered assistant.", icon: Bot, href: "/assistant" },
 ];

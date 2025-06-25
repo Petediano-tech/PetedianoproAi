@@ -45,7 +45,7 @@ const navItems = [
     ],
   },
   { href: '/picture-generator', label: 'Picture Generator', icon: ImageIcon },
-  { href: '/animation-generator', label: 'Animation Generator', icon: Film },
+  { href: '/animation-generator', label: 'Anime Story Generator', icon: Film },
   { href: '/file-analyzer', label: 'File Analyzer', icon: FileText },
   { href: '/assistant', label: 'PeteAI Assistant', icon: Bot },
   {
