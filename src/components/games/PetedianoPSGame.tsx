@@ -3,8 +3,6 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dices } from 'lucide-react'; // Placeholder icon for game
 
 const PLAYER_WIDTH = 30;
 const PLAYER_HEIGHT = 30;
@@ -32,13 +30,13 @@ export default function PetedianoPSGame() {
   const scoreIntervalRef = useRef<NodeJS.Timeout>();
 
 
-  const resetGame = () => {
+  const resetGame = useCallback(() => {
     setPlayerX(GAME_WIDTH / 2 - PLAYER_WIDTH / 2);
     setObstacles([]);
     setScore(0);
     setGameOver(false);
-    lastObstacleSpawnRef.current = Date.now();
-  };
+    lastObstacleSpawnRef.current = performance.now();
+  }, []);
 
   const gameLoop = useCallback((timestamp: number) => {
     if (gameOver) return;
@@ -116,57 +114,55 @@ export default function PetedianoPSGame() {
     };
   }, [gameOver, gameLoop]);
 
+  // Make the game focusable to capture key events on mount
+  useEffect(() => {
+    gameAreaRef.current?.focus();
+  }, []);
+
 
   return (
-    <Card className="w-full max-w-sm mx-auto my-8">
-      <CardHeader>
-        <CardTitle className="font-headline text-center text-2xl text-primary flex items-center justify-center">
-          <Dices className="mr-2 h-6 w-6"/> Petediano PS
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col items-center">
+    <div className="flex flex-col items-center">
+      <div
+        ref={gameAreaRef}
+        className="relative bg-muted overflow-hidden border border-primary rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+        style={{ width: GAME_WIDTH, height: GAME_HEIGHT }}
+        tabIndex={0} // Make it focusable for keyboard events
+      >
+        {/* Player */}
         <div
-          ref={gameAreaRef}
-          className="relative bg-muted overflow-hidden border border-primary rounded-md"
-          style={{ width: GAME_WIDTH, height: GAME_HEIGHT }}
-          tabIndex={0} // Make it focusable for keyboard events
-        >
-          {/* Player */}
+          className="absolute bg-accent rounded"
+          style={{
+            width: PLAYER_WIDTH,
+            height: PLAYER_HEIGHT,
+            left: playerX,
+            bottom: 10, // Player fixed at bottom
+          }}
+          data-ai-hint="player square"
+        />
+        {/* Obstacles */}
+        {obstacles.map(obs => (
           <div
-            className="absolute bg-accent rounded"
+            key={obs.id}
+            className="absolute bg-destructive rounded"
             style={{
-              width: PLAYER_WIDTH,
-              height: PLAYER_HEIGHT,
-              left: playerX,
-              bottom: 10, // Player fixed at bottom
+              width: OBSTACLE_WIDTH,
+              height: OBSTACLE_HEIGHT,
+              left: obs.x,
+              top: obs.y,
             }}
-            data-ai-hint="player square"
+            data-ai-hint="obstacle square"
           />
-          {/* Obstacles */}
-          {obstacles.map(obs => (
-            <div
-              key={obs.id}
-              className="absolute bg-destructive rounded"
-              style={{
-                width: OBSTACLE_WIDTH,
-                height: OBSTACLE_HEIGHT,
-                left: obs.x,
-                top: obs.y,
-              }}
-              data-ai-hint="obstacle square"
-            />
-          ))}
-          {gameOver && (
-            <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-primary-foreground">
-              <p className="text-2xl font-bold">Game Over!</p>
-              <p className="text-lg">Score: {score}</p>
-              <Button onClick={resetGame} className="mt-4" variant="secondary">Play Again</Button>
-            </div>
-          )}
-        </div>
-        <div className="mt-4 text-lg font-semibold">Score: {score}</div>
-        <p className="text-sm text-muted-foreground mt-2">Use Arrow Keys to Move</p>
-      </CardContent>
-    </Card>
+        ))}
+        {gameOver && (
+          <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-primary-foreground">
+            <p className="text-2xl font-bold">Game Over!</p>
+            <p className="text-lg">Score: {score}</p>
+            <Button onClick={resetGame} className="mt-4" variant="secondary">Play Again</Button>
+          </div>
+        )}
+      </div>
+      <div className="mt-4 text-lg font-semibold">Score: {score}</div>
+      <p className="text-sm text-muted-foreground mt-2">Use Arrow Keys to Move</p>
+    </div>
   );
 }

@@ -1,36 +1,10 @@
 
 "use client";
 
-import { useState } from 'react';
 import Image from 'next/image';
-import { Button } from '@/components/ui/button';
-import { WifiOff, Gamepad2, Loader2 } from 'lucide-react';
-import dynamic from 'next/dynamic';
-
-const PetedianoPSGame = dynamic(() => import('@/components/games/PetedianoPSGame'), {
-  loading: () => (
-    <div className="flex flex-col items-center justify-center h-[400px] w-[300px] bg-muted rounded-md border border-primary">
-      <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-      <p className="text-primary">Loading Game...</p>
-    </div>
-  ),
-  ssr: false, // The game is likely client-side only
-});
+import { WifiOff } from 'lucide-react';
 
 export default function OfflineFallback() {
-  const [showGame, setShowGame] = useState(false);
-
-  if (showGame) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
-        <PetedianoPSGame />
-        <Button onClick={() => setShowGame(false)} variant="outline" className="mt-4">
-          Back to Offline Message
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-6 text-center">
       <WifiOff className="h-24 w-24 text-primary opacity-70 mb-6" />
@@ -47,9 +21,6 @@ export default function OfflineFallback() {
         className="rounded-lg mb-8 shadow-md"
         data-ai-hint="sad robot connection" 
       />
-      <Button onClick={() => setShowGame(true)} size="lg">
-        <Gamepad2 className="mr-2 h-5 w-5" /> Play Petediano PS While You Wait
-      </Button>
       <p className="text-sm text-muted-foreground mt-12">
         Petediano Pro needs an internet connection to work its magic.
       </p>
