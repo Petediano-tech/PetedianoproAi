@@ -124,56 +124,65 @@ const generateAnimeStoryFlow = ai.defineFlow(
 
     const finalPages: z.infer<typeof StoryPageSchema>[] = [];
 
-    // 2. For each scene, generate text, then image and audio in parallel
+    // 2. For each scene, generate text, image, and audio within a try/catch block for resilience.
     for (const scene of sceneDescriptions) {
-      const pageTextResult = await storyPageTextPrompt({ sceneDescription: scene, language: input.language });
-      const text = pageTextResult.output!.pageText;
+      try {
+        const pageTextResult = await storyPageTextPrompt({ sceneDescription: scene, language: input.language });
+        const text = pageTextResult.output?.pageText;
 
-      if (!text) continue;
+        if (!text) {
+            console.warn(`Skipping scene due to empty text generation: "${scene}"`);
+            continue;
+        }
 
-      const [imageGenerationResult, audioGenerationResult] = await Promise.all([
-        // Image generation
-        ai.generate({
-          model: 'googleai/gemini-2.0-flash-preview-image-generation',
-          prompt: createImagePrompt(scene, input.style),
-          config: {
-            responseModalities: ['IMAGE', 'TEXT'],
-          },
-        }),
-        // Audio generation
-        ai.generate({
-          model: googleAI.model('gemini-2.5-flash-preview-tts'),
-          prompt: text,
-          config: {
-            responseModalities: ['AUDIO'],
-            speechConfig: {
-              voiceConfig: {
-                prebuiltVoiceConfig: { voiceName: input.voice as any },
+        const [imageGenerationResult, audioGenerationResult] = await Promise.all([
+          // Image generation
+          ai.generate({
+            model: 'googleai/gemini-2.0-flash-preview-image-generation',
+            prompt: createImagePrompt(scene, input.style),
+            config: {
+              responseModalities: ['IMAGE', 'TEXT'],
+            },
+          }),
+          // Audio generation
+          ai.generate({
+            model: googleAI.model('gemini-2.5-flash-preview-tts'),
+            prompt: text,
+            config: {
+              responseModalities: ['AUDIO'],
+              speechConfig: {
+                voiceConfig: {
+                  prebuiltVoiceConfig: { voiceName: input.voice as any },
+                },
               },
             },
-          },
-        }),
-      ]);
-      
-      const imageUrl = imageGenerationResult.media?.url;
-      const pcmAudioData = audioGenerationResult.media?.url;
-      let audioUrl = '';
-
-      if (pcmAudioData) {
-         const audioBuffer = Buffer.from(
+          }),
+        ]);
+        
+        const imageUrl = imageGenerationResult.media?.url;
+        const pcmAudioData = audioGenerationResult.media?.url;
+        
+        if (!imageUrl || !pcmAudioData) {
+            console.warn(`Skipping scene due to missing media for: "${scene}"`);
+            continue;
+        }
+        
+        const audioBuffer = Buffer.from(
           pcmAudioData.substring(pcmAudioData.indexOf(',') + 1),
           'base64'
         );
         const wavBase64 = await toWav(audioBuffer);
-        audioUrl = `data:audio/wav;base64,${wavBase64}`;
-      }
+        const audioUrl = `data:audio/wav;base64,${wavBase64}`;
 
-      if (text && imageUrl && audioUrl) {
         finalPages.push({
           text,
           imageUrl,
           audioUrl,
         });
+
+      } catch (error) {
+        console.error(`Failed to process page for scene: "${scene}". Skipping. Error:`, error);
+        // Continue to the next scene even if one fails
       }
     }
 
