@@ -96,17 +96,19 @@ export async function generateLiveDialogue(input: GenerateLiveDialogueInput): Pr
   try {
     // 1. Generate the script
     const scriptResult = await scriptGenerationPrompt(input);
-    if (!scriptResult.output) {
-      throw new Error('Failed to generate the story script. The AI may have returned an invalid structure.');
+    if (!scriptResult.output || !scriptResult.output.scenes || scriptResult.output.scenes.length === 0) {
+      throw new Error('Failed to generate a valid story script. The AI may have returned an empty or invalid structure.');
     }
     const { title, scenes } = scriptResult.output;
 
     let fullAudioUrl = '';
-    const speakers = [...new Set(scenes.flatMap(s => s.dialogue.map(d => d.speaker)))];
-
-    // 2. Generate audio, but wrap in a try/catch to prevent the whole flow from failing
+    
+    // 2. Generate audio, with robust checks and error handling
     try {
-      if (speakers.length > 0) {
+      const speakers = [...new Set(scenes.flatMap(s => s.dialogue.map(d => d.speaker)))];
+      const hasDialogueLines = scenes.some(s => s.dialogue.some(d => d.line.trim().length > 0));
+
+      if (speakers.length > 0 && hasDialogueLines) {
         let audioGenerationResult;
 
         if (speakers.length === 1) {
@@ -154,7 +156,7 @@ export async function generateLiveDialogue(input: GenerateLiveDialogueInput): Pr
           });
         }
 
-        if (audioGenerationResult.media?.url) {
+        if (audioGenerationResult?.media?.url) {
           const pcmAudioData = audioGenerationResult.media.url;
           const audioBuffer = Buffer.from(pcmAudioData.substring(pcmAudioData.indexOf(',') + 1), 'base64');
           const wavBase64 = await toWav(audioBuffer);
@@ -163,12 +165,11 @@ export async function generateLiveDialogue(input: GenerateLiveDialogueInput): Pr
            console.warn("Audio generation succeeded but returned no media URL.");
         }
       } else {
-        console.warn("No speakers found in the generated script. Skipping audio generation.");
+        console.warn("No speakers or dialogue lines found in the generated script. Skipping audio generation.");
       }
     } catch (error) {
       console.error("Failed to generate audio for the dialogue. Continuing without audio.", error);
-      // This catch block ensures that even if audio generation fails, the rest of the function proceeds.
-      // fullAudioUrl will remain an empty string.
+      fullAudioUrl = '';
     }
 
 
