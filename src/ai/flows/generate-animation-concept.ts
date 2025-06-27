@@ -126,7 +126,10 @@ const generateAnimeStoryFlow = ai.defineFlow(
   async (input) => {
     // 1. Generate the story outline
     const outlineResult = await storyOutlinePrompt(input);
-    const { title, sceneDescriptions } = outlineResult.output!;
+    if (!outlineResult.output) {
+      throw new Error("Failed to generate a valid story outline from the AI.");
+    }
+    const { title, sceneDescriptions } = outlineResult.output;
 
     const finalPages: z.infer<typeof StoryPageSchema>[] = [];
 
