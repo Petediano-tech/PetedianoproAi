@@ -101,44 +101,72 @@ export async function generateLiveDialogue(input: GenerateLiveDialogueInput): Pr
   }
   const { title, scenes } = scriptResult.output;
 
-  // 2. Assign voices to speakers
+  let fullAudioUrl = '';
   const speakers = [...new Set(scenes.flatMap(s => s.dialogue.map(d => d.speaker)))];
-  const voiceAssignments: Record<string, typeof AVAILABLE_VOICES[number]> = {};
-  speakers.forEach((speaker, index) => {
-    voiceAssignments[speaker] = AVAILABLE_VOICES[index % AVAILABLE_VOICES.length];
-  });
 
-  const multiSpeakerConfig = {
-    multiSpeakerVoiceConfig: {
-      speakerVoiceConfigs: Object.entries(voiceAssignments).map(([speaker, voiceName]) => ({
-        speaker: speaker,
-        voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName as any } },
-      })),
-    },
-  };
-  
-  // 3. Format script for multi-speaker TTS and generate full audio
-  const ttsPrompt = scenes.flatMap(s => s.dialogue).map(d => `${d.speaker}: ${d.line}`).join('\n');
-  
-  const audioGenerationResult = await ai.generate({
-    model: googleAI.model('gemini-2.5-flash-preview-tts'),
-    prompt: ttsPrompt,
-    config: {
-      responseModalities: ['AUDIO'],
-      speechConfig: multiSpeakerConfig,
-    },
-  });
+  // 2. Generate audio based on the number of speakers
+  if (speakers.length > 0) {
+    let audioGenerationResult;
 
-  if (!audioGenerationResult.media?.url) {
-    throw new Error('Failed to generate the audio dialogue.');
+    if (speakers.length === 1) {
+      // Handle single-speaker audio
+      const voice = AVAILABLE_VOICES[0];
+      const singleSpeakerTtsPrompt = scenes.flatMap(s => s.dialogue).map(d => d.line).join('\n\n');
+      audioGenerationResult = await ai.generate({
+        model: googleAI.model('gemini-2.5-flash-preview-tts'),
+        prompt: singleSpeakerTtsPrompt,
+        config: {
+          responseModalities: ['AUDIO'],
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice as any } } },
+        },
+      });
+    } else {
+      // Handle multi-speaker audio (2 or more speakers mapped to 2 voices)
+      const voice1 = AVAILABLE_VOICES[0]; // A male voice
+      const voice2 = AVAILABLE_VOICES[AVAILABLE_VOICES.length - 1]; // A female voice
+
+      const speakerMap: Record<string, string> = {};
+      let nextSpeakerIndex = 1;
+      for (const speaker of speakers) {
+        speakerMap[speaker] = `Speaker${nextSpeakerIndex}`;
+        nextSpeakerIndex = nextSpeakerIndex === 1 ? 2 : 1;
+      }
+      
+      const multiSpeakerConfig = {
+        multiSpeakerVoiceConfig: {
+          speakerVoiceConfigs: [
+            { speaker: 'Speaker1', voiceConfig: { prebuiltVoiceConfig: { voiceName: voice1 as any } } },
+            { speaker: 'Speaker2', voiceConfig: { prebuiltVoiceConfig: { voiceName: voice2 as any } } }
+          ],
+        },
+      };
+
+      const ttsPrompt = scenes.flatMap(s => s.dialogue).map(d => `${speakerMap[d.speaker]}: ${d.line}`).join('\n');
+      
+      audioGenerationResult = await ai.generate({
+        model: googleAI.model('gemini-2.5-flash-preview-tts'),
+        prompt: ttsPrompt,
+        config: {
+          responseModalities: ['AUDIO'],
+          speechConfig: multiSpeakerConfig,
+        },
+      });
+    }
+
+    if (!audioGenerationResult.media?.url) {
+      throw new Error('Failed to generate the audio dialogue.');
+    }
+    const pcmAudioData = audioGenerationResult.media.url;
+    const audioBuffer = Buffer.from(pcmAudioData.substring(pcmAudioData.indexOf(',') + 1), 'base64');
+    const wavBase64 = await toWav(audioBuffer);
+    fullAudioUrl = `data:audio/wav;base64,${wavBase64}`;
+  } else {
+    // No speakers found, but we can still proceed without audio.
+    console.warn("No speakers found in the generated script. Skipping audio generation.");
   }
 
-  const pcmAudioData = audioGenerationResult.media.url;
-  const audioBuffer = Buffer.from(pcmAudioData.substring(pcmAudioData.indexOf(',') + 1), 'base64');
-  const wavBase64 = await toWav(audioBuffer);
-  const fullAudioUrl = `data:audio/wav;base64,${wavBase64}`;
 
-  // 4. Generate images if requested
+  // 3. Generate images if requested
   const processedScenes: GenerateLiveDialogueOutput['scenes'] = [];
   if (input.withPictures) {
       let previousImage: {url: string} | null = null;
@@ -146,7 +174,10 @@ export async function generateLiveDialogue(input: GenerateLiveDialogueInput): Pr
           try {
               let imagePrompt = `Generate a high-quality, expressive illustration for a story. The scene is: "${scene.sceneDescription}". `;
               const charactersInScene = [...new Set(scene.dialogue.map(d => d.speaker).filter(s => s !== 'NARRATOR'))];
-              imagePrompt += `The characters present are: ${charactersInScene.join(', ')}. The style should match the genre: ${input.genre}.`;
+              if (charactersInScene.length > 0) {
+                imagePrompt += `The characters present are: ${charactersInScene.join(', ')}. `;
+              }
+              imagePrompt += `The style should match the genre: ${input.genre}.`;
 
               const promptParts: any[] = [{ text: imagePrompt }];
               if (previousImage) {
