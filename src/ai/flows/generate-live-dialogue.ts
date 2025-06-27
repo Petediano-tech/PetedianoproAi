@@ -17,7 +17,7 @@ import wav from 'wav';
 const AVAILABLE_VOICES = ['Algenib', 'Achernar', 'Spica', 'Sirius', 'Canopus', 'Deneb', 'Hadar', 'Regulus', 'Antares', 'Capella'] as const;
 
 // Define input schema
-export const GenerateLiveDialogueInputSchema = z.object({
+const GenerateLiveDialogueInputSchema = z.object({
   title: z.string().describe('The title or main topic for the dialogue.'),
   genre: z.enum(['African Story', 'Funny/Hilarious', 'Financial', 'Real Life Hustle', 'Malawian Story', 'Sci-Fi', 'Fantasy', 'Mystery']).describe('The genre of the story.'),
   characterCount: z.enum(['Normal (2-3 characters)', 'Large (4+ characters)']).describe('The approximate number of characters in the dialogue.'),
@@ -36,7 +36,7 @@ const DialogueSceneSchema = z.object({
   })).describe('The sequence of dialogue lines in this scene.'),
 });
 
-export const GenerateLiveDialogueOutputSchema = z.object({
+const GenerateLiveDialogueOutputSchema = z.object({
   title: z.string().describe('The generated title of the dialogue or story.'),
   fullAudioUrl: z.string().describe('A data URI for the complete audio narration of the dialogue.'),
   scenes: z.array(DialogueSceneSchema).describe('An array of scenes, each containing dialogue and an optional image.'),
