@@ -13,6 +13,7 @@ import '@/ai/flows/generate-video-script.ts';
 import '@/ai/flows/generate-blog-post.ts';
 import '@/ai/flows/generate-presentation-outline.ts';
 import '@/ai/flows/generate-social-campaign.ts';
-import '@/ai/flows/generate-character-persona.ts'; // Added new flow
-import '@/ai/flows/generate-what-if-scenario.ts'; // Added new flow
+import '@/ai/flows/generate-character-persona.ts';
+import '@/ai/flows/generate-what-if-scenario.ts';
+import '@/ai/flows/generate-live-dialogue.ts'; // Added new flow
     

@@ -1,0 +1,181 @@
+
+'use server';
+/**
+ * @fileOverview An AI agent for generating multi-speaker dialogues with audio and optional images.
+ *
+ * - generateLiveDialogue - Generates a dialogue with audio and optional images.
+ * - GenerateLiveDialogueInput - Input type.
+ * - GenerateLiveDialogueOutput - Output type.
+ */
+
+import {ai} from '@/ai/genkit';
+import {z} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
+import wav from 'wav';
+
+// Define available voices for assignment
+const AVAILABLE_VOICES = ['Algenib', 'Achernar', 'Spica', 'Sirius', 'Canopus', 'Deneb', 'Hadar', 'Regulus', 'Antares', 'Capella'] as const;
+
+// Define input schema
+export const GenerateLiveDialogueInputSchema = z.object({
+  title: z.string().describe('The title or main topic for the dialogue.'),
+  genre: z.enum(['African Story', 'Funny/Hilarious', 'Financial', 'Real Life Hustle', 'Malawian Story', 'Sci-Fi', 'Fantasy', 'Mystery']).describe('The genre of the story.'),
+  characterCount: z.enum(['Normal (2-3 characters)', 'Large (4+ characters)']).describe('The approximate number of characters in the dialogue.'),
+  withPictures: z.boolean().default(false).describe('Whether to generate accompanying images for key scenes.'),
+});
+export type GenerateLiveDialogueInput = z.infer<typeof GenerateLiveDialogueInputSchema>;
+
+// Define output schema
+const DialogueSceneSchema = z.object({
+  sceneNumber: z.number().describe('The sequence number of the scene.'),
+  sceneDescription: z.string().describe('A brief description of the setting and action in this scene.'),
+  imageUrl: z.string().optional().describe('Data URI of the generated image for this scene.'),
+  dialogue: z.array(z.object({
+    speaker: z.string().describe('The name of the speaker (e.g., "NARRATOR", "JOHN").'),
+    line: z.string().describe('The dialogue line spoken by the character.'),
+  })).describe('The sequence of dialogue lines in this scene.'),
+});
+
+export const GenerateLiveDialogueOutputSchema = z.object({
+  title: z.string().describe('The generated title of the dialogue or story.'),
+  fullAudioUrl: z.string().describe('A data URI for the complete audio narration of the dialogue.'),
+  scenes: z.array(DialogueSceneSchema).describe('An array of scenes, each containing dialogue and an optional image.'),
+});
+export type GenerateLiveDialogueOutput = z.infer<typeof GenerateLiveDialogueOutputSchema>;
+
+
+// Helper function to convert PCM audio to WAV format
+async function toWav(pcmData: Buffer): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const writer = new wav.Writer({ channels: 1, sampleRate: 24000, bitDepth: 16 });
+    const bufs: Buffer[] = [];
+    writer.on('error', reject);
+    writer.on('data', (d) => bufs.push(d));
+    writer.on('end', () => resolve(Buffer.concat(bufs).toString('base64')));
+    writer.write(pcmData);
+    writer.end();
+  });
+}
+
+// 1. Prompt to generate the structured story script
+const scriptGenerationPrompt = ai.definePrompt({
+    name: 'dialogueScriptGenerator',
+    input: { schema: GenerateLiveDialogueInputSchema },
+    output: {
+        schema: z.object({
+            title: z.string().describe('A creative and fitting title for the story.'),
+            scenes: z.array(z.object({
+                sceneNumber: z.number(),
+                sceneDescription: z.string().describe("A brief description of this scene's setting and mood."),
+                dialogue: z.array(z.object({
+                    speaker: z.string().describe("The speaker's name or 'NARRATOR'. Use unique names for characters."),
+                    line: z.string().describe("The line of dialogue. For non-speech sounds, use brackets, e.g., [A car horn blares].")
+                }))
+            }))
+        })
+    },
+    prompt: `You are an expert storyteller and scriptwriter. Based on the user's request, create a compelling story structured into scenes with dialogue.
+
+    Topic: {{{title}}}
+    Genre: {{{genre}}}
+    Character Count: {{{characterCount}}}
+
+    Instructions:
+    - Create a story with a clear beginning, middle, and end.
+    - Divide the story into 2 to 4 distinct scenes.
+    - For each scene, provide a 'sceneDescription' of the setting.
+    - Write dialogue for each speaker. Use 'NARRATOR' for narration.
+    - Assign unique names to other speakers (e.g., JOHN, AUNTIE, etc.).
+    - For non-speech sounds (like laughter, a door slamming), describe them in brackets, e.g., [The crowd laughs]. The TTS cannot generate these sounds.
+    - Ensure the number of unique speakers matches the requested character count.
+    `,
+    config: { temperature: 0.8 },
+});
+
+// Main exported function
+export async function generateLiveDialogue(input: GenerateLiveDialogueInput): Promise<GenerateLiveDialogueOutput> {
+  // 1. Generate the script
+  const scriptResult = await scriptGenerationPrompt(input);
+  if (!scriptResult.output) {
+    throw new Error('Failed to generate the story script.');
+  }
+  const { title, scenes } = scriptResult.output;
+
+  // 2. Assign voices to speakers
+  const speakers = [...new Set(scenes.flatMap(s => s.dialogue.map(d => d.speaker)))];
+  const voiceAssignments: Record<string, typeof AVAILABLE_VOICES[number]> = {};
+  speakers.forEach((speaker, index) => {
+    voiceAssignments[speaker] = AVAILABLE_VOICES[index % AVAILABLE_VOICES.length];
+  });
+
+  const multiSpeakerConfig = {
+    multiSpeakerVoiceConfig: {
+      speakerVoiceConfigs: Object.entries(voiceAssignments).map(([speaker, voiceName]) => ({
+        speaker: speaker,
+        voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName as any } },
+      })),
+    },
+  };
+  
+  // 3. Format script for multi-speaker TTS and generate full audio
+  const ttsPrompt = scenes.flatMap(s => s.dialogue).map(d => `${d.speaker}: ${d.line}`).join('\n');
+  
+  const audioGenerationResult = await ai.generate({
+    model: googleAI.model('gemini-2.5-flash-preview-tts'),
+    prompt: ttsPrompt,
+    config: {
+      responseModalities: ['AUDIO'],
+      speechConfig: multiSpeakerConfig,
+    },
+  });
+
+  if (!audioGenerationResult.media?.url) {
+    throw new Error('Failed to generate the audio dialogue.');
+  }
+
+  const pcmAudioData = audioGenerationResult.media.url;
+  const audioBuffer = Buffer.from(pcmAudioData.substring(pcmAudioData.indexOf(',') + 1), 'base64');
+  const wavBase64 = await toWav(audioBuffer);
+  const fullAudioUrl = `data:audio/wav;base64,${wavBase64}`;
+
+  // 4. Generate images if requested
+  const processedScenes: GenerateLiveDialogueOutput['scenes'] = [];
+  if (input.withPictures) {
+      let previousImage: {url: string} | null = null;
+      for (const scene of scenes) {
+          try {
+              let imagePrompt = `Generate a high-quality, expressive illustration for a story. The scene is: "${scene.sceneDescription}". `;
+              const charactersInScene = [...new Set(scene.dialogue.map(d => d.speaker).filter(s => s !== 'NARRATOR'))];
+              imagePrompt += `The characters present are: ${charactersInScene.join(', ')}. The style should match the genre: ${input.genre}.`;
+
+              const promptParts: any[] = [{ text: imagePrompt }];
+              if (previousImage) {
+                  // Add previous image as context to maintain consistency
+                  promptParts.unshift({ media: previousImage });
+              }
+
+              const imageResult = await ai.generate({
+                  model: 'googleai/gemini-2.0-flash-preview-image-generation',
+                  prompt: promptParts,
+                  config: { responseModalities: ['TEXT', 'IMAGE'] },
+              });
+
+              if (imageResult.media?.url) {
+                  scene.imageUrl = imageResult.media.url;
+                  previousImage = { url: imageResult.media.url }; // Update context for next iteration
+              }
+          } catch(error) {
+              console.error(`Failed to generate image for scene ${scene.sceneNumber}. Skipping.`, error);
+          }
+          processedScenes.push(scene);
+      }
+  } else {
+      processedScenes.push(...scenes);
+  }
+
+  return {
+    title,
+    fullAudioUrl,
+    scenes: processedScenes,
+  };
+}

@@ -24,7 +24,8 @@ import {
   Users,
   Brain,
   Lightbulb,
-  Gamepad2
+  Gamepad2,
+  MessagesSquare,
 } from 'lucide-react';
 import { SidebarMenuButton } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
@@ -46,6 +47,7 @@ const navItems = [
   },
   { href: '/picture-generator', label: 'Picture Generator', icon: ImageIcon },
   { href: '/animation-generator', label: 'Anime Story Generator', icon: Film },
+  { href: '/live-dialogue', label: 'Live Dialogue', icon: MessagesSquare },
   { href: '/file-analyzer', label: 'File Analyzer', icon: FileText },
   { href: '/assistant', label: 'PeteAI Assistant', icon: Bot },
   {
