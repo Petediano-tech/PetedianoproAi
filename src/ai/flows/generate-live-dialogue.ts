@@ -23,7 +23,7 @@ const GenerateLiveDialogueInputSchema = z.object({
   characterCount: z.enum(['Normal (2-3 characters)', 'Large (4+ characters)']).describe('The approximate number of characters in the dialogue.'),
   withPictures: z.boolean().default(false).describe('Whether to generate accompanying images for key scenes.'),
 });
-export type GenerateLiveDialogueInput = z.infer<typeof GenerateLiveDialogueInputSchema>;
+type GenerateLiveDialogueInput = z.infer<typeof GenerateLiveDialogueInputSchema>;
 
 // Define output schema
 const DialogueSceneSchema = z.object({
@@ -121,7 +121,9 @@ export async function generateLiveDialogue(input: GenerateLiveDialogueInput): Pr
         },
       });
     } else {
-      // Handle multi-speaker audio (2 or more speakers mapped to 2 voices)
+      // Handle multi-speaker audio (2 or more speakers)
+      // The API requires exactly 2 voices for multi-speaker mode.
+      // We will map all unique characters to one of two speaker labels ('Speaker1' or 'Speaker2').
       const voice1 = AVAILABLE_VOICES[0]; // A male voice
       const voice2 = AVAILABLE_VOICES[AVAILABLE_VOICES.length - 1]; // A female voice
 
@@ -167,7 +169,7 @@ export async function generateLiveDialogue(input: GenerateLiveDialogueInput): Pr
 
 
   // 3. Generate images if requested
-  const processedScenes: GenerateLiveDialogueOutput['scenes'] = [];
+  const processedScenes: z.infer<typeof DialogueSceneSchema>[] = [];
   if (input.withPictures) {
       let previousImage: {url: string} | null = null;
       for (const scene of scenes) {
@@ -190,15 +192,17 @@ export async function generateLiveDialogue(input: GenerateLiveDialogueInput): Pr
                   prompt: promptParts,
                   config: { responseModalities: ['TEXT', 'IMAGE'] },
               });
-
+              
+              const sceneCopy = {...scene};
               if (imageResult.media?.url) {
-                  scene.imageUrl = imageResult.media.url;
+                  sceneCopy.imageUrl = imageResult.media.url;
                   previousImage = { url: imageResult.media.url }; // Update context for next iteration
               }
+              processedScenes.push(sceneCopy);
           } catch(error) {
               console.error(`Failed to generate image for scene ${scene.sceneNumber}. Skipping.`, error);
+              processedScenes.push(scene); // Add the scene even without an image
           }
-          processedScenes.push(scene);
       }
   } else {
       processedScenes.push(...scenes);
