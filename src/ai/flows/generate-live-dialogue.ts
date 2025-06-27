@@ -103,67 +103,73 @@ export async function generateLiveDialogue(input: GenerateLiveDialogueInput): Pr
   let fullAudioUrl = '';
   const speakers = [...new Set(scenes.flatMap(s => s.dialogue.map(d => d.speaker)))];
 
-  // 2. Generate audio based on the number of speakers
-  if (speakers.length > 0) {
-    let audioGenerationResult;
+  // 2. Generate audio, but wrap in a try/catch to prevent the whole flow from failing
+  try {
+    if (speakers.length > 0) {
+      let audioGenerationResult;
 
-    if (speakers.length === 1) {
-      // Handle single-speaker audio
-      const voice = AVAILABLE_VOICES[0];
-      const singleSpeakerTtsPrompt = scenes.flatMap(s => s.dialogue).map(d => d.line).join('\n\n');
-      audioGenerationResult = await ai.generate({
-        model: googleAI.model('gemini-2.5-flash-preview-tts'),
-        prompt: singleSpeakerTtsPrompt,
-        config: {
-          responseModalities: ['AUDIO'],
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice as any } } },
-        },
-      });
-    } else {
-      // Handle multi-speaker audio (2 or more speakers)
-      // The API requires exactly 2 voices for multi-speaker mode.
-      // We will map all unique characters to one of two speaker labels ('Speaker1' or 'Speaker2').
-      const voice1 = AVAILABLE_VOICES[0]; // A male voice
-      const voice2 = AVAILABLE_VOICES[AVAILABLE_VOICES.length - 1]; // A female voice
+      if (speakers.length === 1) {
+        // Handle single-speaker audio
+        const voice = AVAILABLE_VOICES[0];
+        const singleSpeakerTtsPrompt = scenes.flatMap(s => s.dialogue).map(d => d.line).join('\n\n');
+        audioGenerationResult = await ai.generate({
+          model: googleAI.model('gemini-2.5-flash-preview-tts'),
+          prompt: singleSpeakerTtsPrompt,
+          config: {
+            responseModalities: ['AUDIO'],
+            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice as any } } },
+          },
+        });
+      } else {
+        // Handle multi-speaker audio (2 or more speakers)
+        // The API requires exactly 2 voices for multi-speaker mode.
+        // We will map all unique characters to one of two speaker labels ('Speaker1' or 'Speaker2').
+        const voice1 = AVAILABLE_VOICES[0]; // A male voice
+        const voice2 = AVAILABLE_VOICES[AVAILABLE_VOICES.length - 1]; // A female voice
 
-      const speakerMap: Record<string, string> = {};
-      let nextSpeakerIndex = 1;
-      for (const speaker of speakers) {
-        speakerMap[speaker] = `Speaker${nextSpeakerIndex}`;
-        nextSpeakerIndex = nextSpeakerIndex === 1 ? 2 : 1;
+        const speakerMap: Record<string, string> = {};
+        let nextSpeakerIndex = 1;
+        for (const speaker of speakers) {
+          speakerMap[speaker] = `Speaker${nextSpeakerIndex}`;
+          nextSpeakerIndex = nextSpeakerIndex === 1 ? 2 : 1;
+        }
+        
+        const multiSpeakerConfig = {
+          multiSpeakerVoiceConfig: {
+            speakerVoiceConfigs: [
+              { speaker: 'Speaker1', voiceConfig: { prebuiltVoiceConfig: { voiceName: voice1 as any } } },
+              { speaker: 'Speaker2', voiceConfig: { prebuiltVoiceConfig: { voiceName: voice2 as any } } }
+            ],
+          },
+        };
+
+        const ttsPrompt = scenes.flatMap(s => s.dialogue).map(d => `${speakerMap[d.speaker]}: ${d.line}`).join('\n');
+        
+        audioGenerationResult = await ai.generate({
+          model: googleAI.model('gemini-2.5-flash-preview-tts'),
+          prompt: ttsPrompt,
+          config: {
+            responseModalities: ['AUDIO'],
+            speechConfig: multiSpeakerConfig,
+          },
+        });
       }
-      
-      const multiSpeakerConfig = {
-        multiSpeakerVoiceConfig: {
-          speakerVoiceConfigs: [
-            { speaker: 'Speaker1', voiceConfig: { prebuiltVoiceConfig: { voiceName: voice1 as any } } },
-            { speaker: 'Speaker2', voiceConfig: { prebuiltVoiceConfig: { voiceName: voice2 as any } } }
-          ],
-        },
-      };
 
-      const ttsPrompt = scenes.flatMap(s => s.dialogue).map(d => `${speakerMap[d.speaker]}: ${d.line}`).join('\n');
-      
-      audioGenerationResult = await ai.generate({
-        model: googleAI.model('gemini-2.5-flash-preview-tts'),
-        prompt: ttsPrompt,
-        config: {
-          responseModalities: ['AUDIO'],
-          speechConfig: multiSpeakerConfig,
-        },
-      });
+      if (audioGenerationResult.media?.url) {
+        const pcmAudioData = audioGenerationResult.media.url;
+        const audioBuffer = Buffer.from(pcmAudioData.substring(pcmAudioData.indexOf(',') + 1), 'base64');
+        const wavBase64 = await toWav(audioBuffer);
+        fullAudioUrl = `data:audio/wav;base64,${wavBase64}`;
+      } else {
+         console.warn("Audio generation succeeded but returned no media URL.");
+      }
+    } else {
+      console.warn("No speakers found in the generated script. Skipping audio generation.");
     }
-
-    if (!audioGenerationResult.media?.url) {
-      throw new Error('Failed to generate the audio dialogue.');
-    }
-    const pcmAudioData = audioGenerationResult.media.url;
-    const audioBuffer = Buffer.from(pcmAudioData.substring(pcmAudioData.indexOf(',') + 1), 'base64');
-    const wavBase64 = await toWav(audioBuffer);
-    fullAudioUrl = `data:audio/wav;base64,${wavBase64}`;
-  } else {
-    // No speakers found, but we can still proceed without audio.
-    console.warn("No speakers found in the generated script. Skipping audio generation.");
+  } catch (error) {
+    console.error("Failed to generate audio for the dialogue. Continuing without audio.", error);
+    // This catch block ensures that even if audio generation fails, the rest of the function proceeds.
+    // fullAudioUrl will remain an empty string.
   }
 
 
