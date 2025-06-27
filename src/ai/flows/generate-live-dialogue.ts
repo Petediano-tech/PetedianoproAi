@@ -14,7 +14,7 @@ import {googleAI} from '@genkit-ai/googleai';
 import wav from 'wav';
 
 // Define available voices for assignment
-const AVAILABLE_VOICES = ['Algenib', 'Achernar', 'Spica', 'Sirius', 'Canopus', 'Deneb', 'Hadar', 'Regulus', 'Antares', 'Capella'] as const;
+const AVAILABLE_VOICES = ['achernar', 'algenib', 'gacrux', 'rasalgethi', 'schedar', 'sulafat', 'zubenelgenubi', 'charon', 'aoede', 'leda'] as const;
 
 // Define input schema
 const GenerateLiveDialogueInputSchema = z.object({
@@ -35,13 +35,12 @@ const DialogueSceneSchema = z.object({
     line: z.string().describe('The dialogue line spoken by the character.'),
   })).describe('The sequence of dialogue lines in this scene.'),
 });
-
 const GenerateLiveDialogueOutputSchema = z.object({
   title: z.string().describe('The generated title of the dialogue or story.'),
   fullAudioUrl: z.string().describe('A data URI for the complete audio narration of the dialogue.'),
   scenes: z.array(DialogueSceneSchema).describe('An array of scenes, each containing dialogue and an optional image.'),
 });
-export type GenerateLiveDialogueOutput = z.infer<typeof GenerateLiveDialogueOutputSchema>;
+type GenerateLiveDialogueOutput = z.infer<typeof GenerateLiveDialogueOutputSchema>;
 
 
 // Helper function to convert PCM audio to WAV format

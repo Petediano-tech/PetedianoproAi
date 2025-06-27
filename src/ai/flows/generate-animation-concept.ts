@@ -16,24 +16,24 @@ import {googleAI} from '@genkit-ai/googleai';
 const animeStyles = ['Vibrant Shonen', 'Elegant Shojo', 'Chibi/Kawaii', 'Classic 90s', 'Dark Fantasy', 'Cyberpunk', 'Studio Ghibli-esque'] as const;
 const availableVoices = {
   // Male Voices
-  'Algenib': 'Algenib',
-  'Achernar': 'Achernar',
-  'Spica': 'Spica',
-  'Sirius': 'Sirius',
-  'Canopus': 'Canopus',
-  'Deneb': 'Deneb',
-  'Hadar': 'Hadar',
-  'Regulus': 'Regulus',
+  'achernar': 'Achernar',
+  'algenib': 'Algenib',
+  'gacrux': 'Gacrux',
+  'rasalgethi': 'Rasalgethi',
+  'schedar': 'Schedar',
+  'sulafat': 'Sulafat',
+  'zubenelgenubi': 'Zubenelgenubi',
+  'charon': 'Charon',
   // Female Voices
-  'Antares': 'Antares',
-  'Capella': 'Capella',
+  'aoede': 'Aoede',
+  'leda': 'Leda',
 } as const;
 const voiceEnum = z.enum(Object.keys(availableVoices) as [keyof typeof availableVoices, ...(keyof typeof availableVoices)[]]);
 
 const GenerateAnimationConceptInputSchema = z.object({
   prompt: z.string().describe('The main idea or scene for the story (e.g., "a cat who discovers a magical sword", "a detective solving a case in a cyberpunk city").'),
   style: z.enum(animeStyles).default('Vibrant Shonen').describe('The desired anime art style for the generated images.'),
-  voice: voiceEnum.default('Achernar').describe('The desired voice for the audio narration.'),
+  voice: voiceEnum.default('achernar').describe('The desired voice for the audio narration.'),
   language: z.string().optional().default('English').describe('The language for the story text and narration (e.g., English, Chichewa).'),
 });
 export type GenerateAnimationConceptInput = z.infer<typeof GenerateAnimationConceptInputSchema>;

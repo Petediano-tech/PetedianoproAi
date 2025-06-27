@@ -21,25 +21,28 @@ import { Input } from '@/components/ui/input';
 const animeStyles = ['Vibrant Shonen', 'Elegant Shojo', 'Chibi/Kawaii', 'Classic 90s', 'Dark Fantasy', 'Cyberpunk', 'Studio Ghibli-esque'];
 const availableVoices = {
   // Male Voices
-  'Algenib': 'Algenib',
-  'Achernar': 'Achernar',
-  'Spica': 'Spica',
-  'Sirius': 'Sirius',
-  'Canopus': 'Canopus',
-  'Deneb': 'Deneb',
-  'Hadar': 'Hadar',
-  'Regulus': 'Regulus',
+  'achernar': 'Achernar',
+  'algenib': 'Algenib',
+  'gacrux': 'Gacrux',
+  'rasalgethi': 'Rasalgethi',
+  'schedar': 'Schedar',
+  'sulafat': 'Sulafat',
+  'zubenelgenubi': 'Zubenelgenubi',
+  'charon': 'Charon',
   // Female Voices
-  'Antares': 'Antares',
-  'Capella': 'Capella',
+  'aoede': 'Aoede',
+  'leda': 'Leda',
 } as const;
-const voiceList = Object.keys(availableVoices) as (keyof typeof availableVoices)[];
+const maleVoiceKeys = ['achernar', 'algenib', 'gacrux', 'rasalgethi', 'schedar', 'sulafat', 'zubenelgenubi', 'charon'];
+const femaleVoiceKeys = ['aoede', 'leda'];
+type VoiceKey = keyof typeof availableVoices;
+
 
 export default function AnimeStoryGeneratorPage() {
   const [prompt, setPrompt] = useState<string>("");
   const [style, setStyle] = useState<string>(animeStyles[0]);
   const [language, setLanguage] = useState<string>("English");
-  const [voice, setVoice] = useState<keyof typeof availableVoices>(voiceList[0]);
+  const [voice, setVoice] = useState<VoiceKey>('achernar');
   const [generatedStory, setGeneratedStory] = useState<GenerateAnimationConceptOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [progressValue, setProgressValue] = useState(0);
@@ -168,13 +171,13 @@ export default function AnimeStoryGeneratorPage() {
             </div>
             <div>
               <Label htmlFor="voice" className="block mb-2 font-medium">Narration Voice</Label>
-              <Select value={voice} onValueChange={v => setVoice(v as keyof typeof availableVoices)}>
+              <Select value={voice} onValueChange={v => setVoice(v as VoiceKey)}>
                 <SelectTrigger id="voice"><SelectValue placeholder="Select voice" /></SelectTrigger>
                 <SelectContent>
                     <Label className="px-2 text-xs text-muted-foreground">Male Voices</Label>
-                    {voiceList.filter(v => ['Algenib', 'Achernar', 'Spica', 'Sirius', 'Canopus', 'Deneb', 'Hadar', 'Regulus'].includes(v)).map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                    {maleVoiceKeys.map(key => <SelectItem key={key} value={key}>{availableVoices[key]}</SelectItem>)}
                     <Label className="px-2 text-xs text-muted-foreground">Female Voices</Label>
-                    {voiceList.filter(v => ['Antares', 'Capella'].includes(v)).map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                    {femaleVoiceKeys.map(key => <SelectItem key={key} value={key}>{availableVoices[key]}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
