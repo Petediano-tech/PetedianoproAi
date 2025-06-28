@@ -61,7 +61,7 @@ export default function TripPlannerPage() {
       recordFeatureUsage(FEATURE_NAMES.TRIP_PLANNER);
       toast({ title: "Success", description: "Trip itinerary generated!" });
       playNotificationSound(soundSettings);
-    } catch (error) => {
+    } catch (error) {
       console.error("Error generating plan:", error);
       toast({ title: "Error", description: "Failed to generate plan. " + (error as Error).message, variant: "destructive" });
     } finally {
