@@ -15,4 +15,9 @@ import '@/ai/flows/generate-presentation-outline.ts';
 import '@/ai/flows/generate-social-campaign.ts';
 import '@/ai/flows/generate-character-persona.ts';
 import '@/ai/flows/generate-what-if-scenario.ts';
+import '@/ai/flows/generate-business-name.ts';
+import '@/ai/flows/generate-recipe.ts';
+import '@/ai/flows/generate-trip-plan.ts';
+import '@/ai/flows/generate-image-caption.ts';
+import '@/ai/flows/explain-code.ts';
     

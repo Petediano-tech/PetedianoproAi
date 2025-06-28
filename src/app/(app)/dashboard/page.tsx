@@ -1,11 +1,11 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { 
-    ArrowRight, Edit3, Sparkles, ImageIcon, FileText, Bot, MessageSquare, 
+    ArrowRight, Edit3, Sparkles, ImageIcon, FileText, Bot, 
     Settings, DollarSign, Film, Video, Newspaper, Presentation, Share2 as ShareIcon, 
-    Users, Brain, Lightbulb, Gamepad2
+    Users, Lightbulb, Gamepad2, UtensilsCrossed, Captions, Briefcase, Map, Code
 } from "lucide-react";
 
 const mainFeatures = [
@@ -17,17 +17,22 @@ const mainFeatures = [
 ];
 
 const contentGenerationFeatures = [
-  { title: "Quotes Generator", description: "Create motivational quotes.", icon: MessageSquare, href: "/content-generator/quotes" },
+  { title: "Quotes Generator", description: "Create motivational quotes.", icon: Sparkles, href: "/content-generator/quotes" },
   { title: "Stories Generator", description: "Develop long-form stories.", icon: FileText, href: "/content-generator/stories" },
   { title: "Video Script Generator", description: "Draft scripts for videos.", icon: Video, href: "/content-generator/video-scripts" },
   { title: "Blog Post Writer", description: "Generate article drafts.", icon: Newspaper, href: "/content-generator/blog-posts" },
   { title: "Presentation Generator", description: "Outline slide presentations.", icon: Presentation, href: "/content-generator/presentations" },
   { title: "Social Media Planner", description: "Plan social media campaigns.", icon: ShareIcon, href: "/content-generator/social-media-plans" },
+  { title: "Recipe Generator", description: "Create recipes from ingredients.", icon: UtensilsCrossed, href: "/content-generator/recipe-generator"},
+  { title: "Image Caption Generator", description: "Get captions for your photos.", icon: Captions, href: "/content-generator/image-caption-generator"},
 ];
 
 const specializedAIFeatures = [
     { title: "Character Persona Gen", description: "Develop character profiles.", icon: Users, href: "/specialized-ai/character-persona"},
     { title: '"What If" Scenarios', description: "Explore alternative outcomes.", icon: Lightbulb, href: "/specialized-ai/what-if-scenario"},
+    { title: "Business Name Generator", description: "Find names for your venture.", icon: Briefcase, href: "/specialized-ai/business-name-generator"},
+    { title: "Trip Planner", description: "Generate travel itineraries.", icon: Map, href: "/specialized-ai/trip-planner"},
+    { title: "Code Explainer", description: "Understand code snippets.", icon: Code, href: "/specialized-ai/code-explainer"},
 ];
 
 
@@ -45,7 +50,7 @@ export default function DashboardPage() {
 
       <Section title="Core Tools" features={mainFeatures} />
       <Section title="Content Generation Suite" features={contentGenerationFeatures} />
-      <Section title="Specialized AI Tools" features={specializedAIFeatures} />
+      <Section title="Specialized & Developer AI Tools" features={specializedAIFeatures} />
       <Section title="Games & Fun" features={[{ title: "Game Center", description: "Play a fun game of Tic-Tac-Toe.", icon: Gamepad2, href: "/game" }]} />
 
       <div className="grid gap-6 md:grid-cols-2">
