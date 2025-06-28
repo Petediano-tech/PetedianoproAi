@@ -47,7 +47,7 @@ const navItems = [
   },
   { href: '/picture-generator', label: 'Picture Generator', icon: ImageIcon },
   { href: '/animation-generator', label: 'Anime Story Generator', icon: Film },
-  { href: '/live-dialogue', label: 'Live Dialogue', icon: MessagesSquare },
+  // { href: '/live-dialogue', label: 'Live Dialogue', icon: MessagesSquare },
   { href: '/file-analyzer', label: 'File Analyzer', icon: FileText },
   { href: '/assistant', label: 'PeteAI Assistant', icon: Bot },
   {
@@ -113,6 +113,7 @@ export function NavLinks() {
             </div>
           );
         }
+        if (!item.href) return null;
         return (
           <Link href={item.href} key={item.href}>
             <SidebarMenuButton
