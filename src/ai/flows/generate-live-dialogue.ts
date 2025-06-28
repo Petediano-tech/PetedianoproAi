@@ -67,7 +67,7 @@ const scriptGenerationPrompt = ai.definePrompt({
                 sceneNumber: z.number(),
                 sceneDescription: z.string().describe("A brief description of this scene's setting and mood."),
                 dialogue: z.array(z.object({
-                    speaker: z.string().describe("The speaker's name or 'NARRATOR'. Use unique names for characters."),
+                    speaker: z.string().describe("The speaker's name or 'NARRATOR'. Use unique, single-word, alphanumeric names for characters."),
                     line: z.string().describe("The line of dialogue. For non-speech sounds, use brackets, e.g., [A car horn blares].")
                 }))
             }))
@@ -84,7 +84,7 @@ const scriptGenerationPrompt = ai.definePrompt({
     - Divide the story into 2 to 4 distinct scenes.
     - For each scene, provide a 'sceneDescription' of the setting.
     - Write dialogue for each speaker. Use 'NARRATOR' for narration.
-    - Assign unique names to other speakers (e.g., JOHN, AUNTIE, etc.).
+    - Assign unique, single-word, alphanumeric names to other speakers (e.g., JOHN, AUNTIE, etc.).
     - For non-speech sounds (like laughter, a door slamming), describe them in brackets, e.g., [The crowd laughs]. The TTS cannot generate these sounds.
     - Ensure the number of unique speakers matches the requested character count.
     `,
@@ -96,25 +96,35 @@ export async function generateLiveDialogue(input: GenerateLiveDialogueInput): Pr
   try {
     // 1. Generate the script
     const scriptResult = await scriptGenerationPrompt(input);
-    if (!scriptResult.output || !scriptResult.output.scenes || scriptResult.output.scenes.length === 0) {
-      throw new Error('Failed to generate a valid story script. The AI may have returned an empty or invalid structure.');
+    if (!scriptResult.output?.scenes?.length) {
+      throw new Error('AI failed to generate a valid story script.');
     }
-    const { title, scenes } = scriptResult.output;
+    const { title } = scriptResult.output;
+    
+    // Filter out scenes with no valid dialogue lines to make the flow more robust
+    const validScenes = scriptResult.output.scenes
+        .map(scene => ({
+            ...scene,
+            dialogue: scene.dialogue.filter(d => d.speaker && d.line && d.line.trim() !== '')
+        }))
+        .filter(scene => scene.dialogue.length > 0);
+
+    if (validScenes.length === 0) {
+        throw new Error('AI generated a script structure, but it contained no valid dialogue.');
+    }
 
     let fullAudioUrl = '';
     
     // 2. Generate audio, with robust checks and error handling
     try {
-      const speakers = [...new Set(scenes.flatMap(s => s.dialogue.map(d => d.speaker)))];
-      const hasDialogueLines = scenes.some(s => s.dialogue.some(d => d.line.trim().length > 0));
-
-      if (speakers.length > 0 && hasDialogueLines) {
+      const speakers = [...new Set(validScenes.flatMap(s => s.dialogue.map(d => d.speaker)))];
+      
+      if (speakers.length > 0) {
         let audioGenerationResult;
 
         if (speakers.length === 1) {
-          // Handle single-speaker audio
           const voice = AVAILABLE_VOICES[0];
-          const singleSpeakerTtsPrompt = scenes.flatMap(s => s.dialogue).map(d => d.line).join('\n\n');
+          const singleSpeakerTtsPrompt = validScenes.flatMap(s => s.dialogue).map(d => d.line).join('\n\n');
           audioGenerationResult = await ai.generate({
             model: googleAI.model('gemini-2.5-flash-preview-tts'),
             prompt: singleSpeakerTtsPrompt,
@@ -124,9 +134,8 @@ export async function generateLiveDialogue(input: GenerateLiveDialogueInput): Pr
             },
           });
         } else {
-          // Handle multi-speaker audio (2 or more speakers)
-          const voice1 = AVAILABLE_VOICES[0]; // A male voice
-          const voice2 = AVAILABLE_VOICES[AVAILABLE_VOICES.length - 1]; // A female voice
+          const voice1 = AVAILABLE_VOICES[0];
+          const voice2 = AVAILABLE_VOICES[AVAILABLE_VOICES.length - 1];
 
           const speakerMap: Record<string, string> = {};
           let nextSpeakerIndex = 1;
@@ -144,7 +153,7 @@ export async function generateLiveDialogue(input: GenerateLiveDialogueInput): Pr
             },
           };
 
-          const ttsPrompt = scenes.flatMap(s => s.dialogue).map(d => `${speakerMap[d.speaker]}: ${d.line}`).join('\n');
+          const ttsPrompt = validScenes.flatMap(s => s.dialogue).map(d => `${speakerMap[d.speaker]}: ${d.line}`).join('\n');
           
           audioGenerationResult = await ai.generate({
             model: googleAI.model('gemini-2.5-flash-preview-tts'),
@@ -164,8 +173,6 @@ export async function generateLiveDialogue(input: GenerateLiveDialogueInput): Pr
         } else {
            console.warn("Audio generation succeeded but returned no media URL.");
         }
-      } else {
-        console.warn("No speakers or dialogue lines found in the generated script. Skipping audio generation.");
       }
     } catch (error) {
       console.error("Failed to generate audio for the dialogue. Continuing without audio.", error);
@@ -177,7 +184,7 @@ export async function generateLiveDialogue(input: GenerateLiveDialogueInput): Pr
     const processedScenes: z.infer<typeof DialogueSceneSchema>[] = [];
     if (input.withPictures) {
         let previousImage: {url: string} | null = null;
-        for (const scene of scenes) {
+        for (const scene of validScenes) {
             try {
                 let imagePrompt = `Generate a high-quality, expressive illustration for a story. The scene is: "${scene.sceneDescription}". `;
                 const charactersInScene = [...new Set(scene.dialogue.map(d => d.speaker).filter(s => s !== 'NARRATOR'))];
@@ -188,7 +195,6 @@ export async function generateLiveDialogue(input: GenerateLiveDialogueInput): Pr
 
                 const promptParts: any[] = [{ text: imagePrompt }];
                 if (previousImage) {
-                    // Add previous image as context to maintain consistency
                     promptParts.unshift({ media: previousImage });
                 }
 
@@ -201,16 +207,20 @@ export async function generateLiveDialogue(input: GenerateLiveDialogueInput): Pr
                 const sceneCopy = {...scene};
                 if (imageResult.media?.url) {
                     sceneCopy.imageUrl = imageResult.media.url;
-                    previousImage = { url: imageResult.media.url }; // Update context for next iteration
+                    previousImage = { url: imageResult.media.url };
                 }
                 processedScenes.push(sceneCopy);
             } catch(error) {
                 console.error(`Failed to generate image for scene ${scene.sceneNumber}. Skipping.`, error);
-                processedScenes.push(scene); // Add the scene even without an image
+                processedScenes.push(scene);
             }
         }
     } else {
-        processedScenes.push(...scenes);
+        processedScenes.push(...validScenes);
+    }
+    
+    if (processedScenes.length === 0) {
+        throw new Error("Failed to process any valid scenes from the generated script.");
     }
 
     return {
@@ -220,7 +230,6 @@ export async function generateLiveDialogue(input: GenerateLiveDialogueInput): Pr
     };
   } catch (error: any) {
     console.error("An unhandled error occurred in the generateLiveDialogue flow:", error);
-    // Re-throw a user-friendly error that the client can display
     throw new Error(`The dialogue generation failed unexpectedly. Please try again. Details: ${error.message}`);
   }
 }
