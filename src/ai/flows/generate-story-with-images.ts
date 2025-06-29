@@ -92,53 +92,59 @@ const generateStoryWithImagesFlow = ai.defineFlow(
     outputSchema: GenerateStoryWithImagesOutputSchema,
   },
   async input => {
-    const outlineResult = await storyOutlinePrompt(input);
-    
-    if (!outlineResult.output || !outlineResult.output.sceneDescriptions || outlineResult.output.sceneDescriptions.length === 0) {
-      throw new Error("The AI failed to generate a valid story outline. Please try adjusting your topic.");
-    }
-
-    const {title, sceneDescriptions} = outlineResult.output;
-
-    const pages = [];
-    for (const sceneDescription of sceneDescriptions) {
-      try {
-        const pageResult = await storyPagePrompt({
-          topic: input.topic,
-          sceneDescription,
-        });
-
-        if (!pageResult.output?.text || !pageResult.output?.imageDescription) {
-          console.warn(`Skipping scene due to missing text or image description: "${sceneDescription}"`);
-          continue;
-        }
-
-        const {media} = await ai.generate({
-          model: 'googleai/gemini-2.0-flash-preview-image-generation',
-          prompt: `Generate an illustration for a story. The scene is: "${pageResult.output.imageDescription}". The image should be artistic and visually compelling.`,
-          config: {
-            responseModalities: ['TEXT', 'IMAGE'],
-          },
-        });
-
-        if (!media?.url) {
-          console.warn(`Skipping scene due to missing image media for: "${sceneDescription}"`);
-          continue;
-        }
-
-        pages.push({
-          text: pageResult.output.text,
-          imageUrl: media.url,
-        });
-      } catch (error) {
-        console.error(`Failed to process page for scene: "${sceneDescription}". Skipping. Error:`, error);
+    try {
+      const outlineResult = await storyOutlinePrompt(input);
+      
+      if (!outlineResult.output || !outlineResult.output.sceneDescriptions || outlineResult.output.sceneDescriptions.length === 0) {
+        throw new Error("The AI failed to generate a valid story outline. Please try adjusting your topic.");
       }
-    }
 
-    if (pages.length === 0) {
-      throw new Error("The AI generated an outline, but failed to create any story pages. Please try again.");
-    }
+      const {title, sceneDescriptions} = outlineResult.output;
 
-    return {title, pages};
+      const pages = [];
+      for (const sceneDescription of sceneDescriptions) {
+        try {
+          const pageResult = await storyPagePrompt({
+            topic: input.topic,
+            sceneDescription,
+          });
+
+          if (!pageResult.output?.text || !pageResult.output?.imageDescription) {
+            console.warn(`Skipping scene due to missing text or image description: "${sceneDescription}"`);
+            continue;
+          }
+
+          const {media} = await ai.generate({
+            model: 'googleai/gemini-2.0-flash-preview-image-generation',
+            prompt: `Generate an illustration for a story. The scene is: "${pageResult.output.imageDescription}". The image should be artistic and visually compelling.`,
+            config: {
+              responseModalities: ['TEXT', 'IMAGE'],
+            },
+          });
+
+          if (!media?.url) {
+            console.warn(`Skipping scene due to missing image media for: "${sceneDescription}"`);
+            continue;
+          }
+
+          pages.push({
+            text: pageResult.output.text,
+            imageUrl: media.url,
+          });
+        } catch (error) {
+          console.error(`Failed to process page for scene: "${sceneDescription}". Skipping. Error:`, error);
+        }
+      }
+
+      if (pages.length === 0) {
+        throw new Error("The AI generated an outline, but failed to create any story pages. Please try again.");
+      }
+
+      return {title, pages};
+    } catch (err) {
+        console.error("Fatal error in generateStoryWithImagesFlow:", err);
+        // Re-throw a user-friendly error to be displayed on the client
+        throw new Error(`An unexpected error occurred while generating the story. The AI may have returned an invalid response or a safety filter may have been triggered. Details: ${(err as Error).message}`);
+    }
   }
 );

@@ -116,84 +116,90 @@ const generateAnimeStoryFlow = ai.defineFlow(
     outputSchema: GenerateAnimationConceptOutputSchema,
   },
   async (input) => {
-    // 1. Generate the story outline
-    const outlineResult = await storyOutlinePrompt(input);
-    if (!outlineResult.output || !outlineResult.output.sceneDescriptions || outlineResult.output.sceneDescriptions.length === 0) {
-      throw new Error("The AI failed to generate a valid story outline. Please try adjusting your prompt.");
-    }
-    const { title, sceneDescriptions } = outlineResult.output;
+    try {
+      // 1. Generate the story outline
+      const outlineResult = await storyOutlinePrompt(input);
+      if (!outlineResult.output || !outlineResult.output.sceneDescriptions || outlineResult.output.sceneDescriptions.length === 0) {
+        throw new Error("The AI failed to generate a valid story outline. Please try adjusting your prompt.");
+      }
+      const { title, sceneDescriptions } = outlineResult.output;
 
-    const finalPages: z.infer<typeof StoryPageSchema>[] = [];
+      const finalPages: z.infer<typeof StoryPageSchema>[] = [];
 
-    // 2. For each scene, generate text, image, and audio within a try/catch block for resilience.
-    for (const scene of sceneDescriptions) {
-      try {
-        const pageTextResult = await storyPageTextPrompt({ sceneDescription: scene, language: input.language });
-        const text = pageTextResult.output?.pageText;
+      // 2. For each scene, generate text, image, and audio within a try/catch block for resilience.
+      for (const scene of sceneDescriptions) {
+        try {
+          const pageTextResult = await storyPageTextPrompt({ sceneDescription: scene, language: input.language });
+          const text = pageTextResult.output?.pageText;
 
-        if (!text) {
-            console.warn(`Skipping scene due to empty text generation: "${scene}"`);
-            continue;
-        }
+          if (!text) {
+              console.warn(`Skipping scene due to empty text generation: "${scene}"`);
+              continue;
+          }
 
-        const [imageGenerationResult, audioGenerationResult] = await Promise.all([
-          // Image generation
-          ai.generate({
-            model: 'googleai/gemini-2.0-flash-preview-image-generation',
-            prompt: createImagePrompt(scene, input.style),
-            config: {
-              responseModalities: ['IMAGE', 'TEXT'],
-            },
-          }),
-          // Audio generation
-          ai.generate({
-            model: googleAI.model('gemini-2.5-flash-preview-tts'),
-            prompt: text,
-            config: {
-              responseModalities: ['AUDIO'],
-              speechConfig: {
-                voiceConfig: {
-                  prebuiltVoiceConfig: { voiceName: input.voice as any },
+          const [imageGenerationResult, audioGenerationResult] = await Promise.all([
+            // Image generation
+            ai.generate({
+              model: 'googleai/gemini-2.0-flash-preview-image-generation',
+              prompt: createImagePrompt(scene, input.style),
+              config: {
+                responseModalities: ['IMAGE', 'TEXT'],
+              },
+            }),
+            // Audio generation
+            ai.generate({
+              model: googleAI.model('gemini-2.5-flash-preview-tts'),
+              prompt: text,
+              config: {
+                responseModalities: ['AUDIO'],
+                speechConfig: {
+                  voiceConfig: {
+                    prebuiltVoiceConfig: { voiceName: input.voice as any },
+                  },
                 },
               },
-            },
-          }),
-        ]);
-        
-        const imageUrl = imageGenerationResult.media?.url;
-        const pcmAudioData = audioGenerationResult.media?.url;
-        
-        if (!imageUrl || !pcmAudioData) {
-            console.warn(`Skipping scene due to missing media for: "${scene}"`);
-            continue;
+            }),
+          ]);
+          
+          const imageUrl = imageGenerationResult.media?.url;
+          const pcmAudioData = audioGenerationResult.media?.url;
+          
+          if (!imageUrl || !pcmAudioData) {
+              console.warn(`Skipping scene due to missing media for: "${scene}"`);
+              continue;
+          }
+          
+          const audioBuffer = Buffer.from(
+            pcmAudioData.substring(pcmAudioData.indexOf(',') + 1),
+            'base64'
+          );
+          const wavBase64 = await toWav(audioBuffer);
+          const audioUrl = `data:audio/wav;base64,${wavBase64}`;
+
+          finalPages.push({
+            text,
+            imageUrl,
+            audioUrl,
+          });
+
+        } catch (error) {
+          console.error(`Failed to process page for scene: "${scene}". Skipping. Error:`, error);
+          // Continue to the next scene even if one fails
         }
-        
-        const audioBuffer = Buffer.from(
-          pcmAudioData.substring(pcmAudioData.indexOf(',') + 1),
-          'base64'
-        );
-        const wavBase64 = await toWav(audioBuffer);
-        const audioUrl = `data:audio/wav;base64,${wavBase64}`;
-
-        finalPages.push({
-          text,
-          imageUrl,
-          audioUrl,
-        });
-
-      } catch (error) {
-        console.error(`Failed to process page for scene: "${scene}". Skipping. Error:`, error);
-        // Continue to the next scene even if one fails
       }
-    }
 
-    if (finalPages.length === 0) {
-        throw new Error("The AI generated an outline, but failed to create any story pages. Please try again.");
-    }
+      if (finalPages.length === 0) {
+          throw new Error("The AI generated an outline, but failed to create any story pages. Please try again.");
+      }
 
-    return {
-      title,
-      pages: finalPages,
-    };
+      return {
+        title,
+        pages: finalPages,
+      };
+    } catch (err) {
+      console.error("Fatal error in generateAnimeStoryFlow:", err);
+      // Re-throw a user-friendly error to be displayed on the client
+      throw new Error(`An unexpected error occurred while generating the anime story. The AI may have returned an invalid response or a safety filter may have been triggered. Details: ${(err as Error).message}`);
+    }
   }
 );
