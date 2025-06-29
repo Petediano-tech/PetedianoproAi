@@ -93,7 +93,12 @@ const generateStoryWithImagesFlow = ai.defineFlow(
   },
   async input => {
     const outlineResult = await storyOutlinePrompt(input);
-    const {title, sceneDescriptions} = outlineResult.output!;
+    
+    if (!outlineResult.output || !outlineResult.output.sceneDescriptions || outlineResult.output.sceneDescriptions.length === 0) {
+      throw new Error("The AI failed to generate a valid story outline. Please try adjusting your topic.");
+    }
+
+    const {title, sceneDescriptions} = outlineResult.output;
 
     const pages = [];
     for (const sceneDescription of sceneDescriptions) {
@@ -128,6 +133,10 @@ const generateStoryWithImagesFlow = ai.defineFlow(
       } catch (error) {
         console.error(`Failed to process page for scene: "${sceneDescription}". Skipping. Error:`, error);
       }
+    }
+
+    if (pages.length === 0) {
+      throw new Error("The AI generated an outline, but failed to create any story pages. Please try again.");
     }
 
     return {title, pages};

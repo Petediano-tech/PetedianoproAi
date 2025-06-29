@@ -86,32 +86,57 @@ export default function StoryGeneratorPage() {
     try {
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
       const margin = 15;
       const maxLineWidth = pageWidth - margin * 2;
       let y = margin;
 
       // Add Title
       doc.setFontSize(22);
-      doc.text(generatedStory.title, pageWidth / 2, y, { align: 'center' });
-      y += 15;
+      doc.setFont(undefined, 'bold');
+      const titleLines = doc.splitTextToSize(generatedStory.title, maxLineWidth);
+      doc.text(titleLines, pageWidth / 2, y, { align: 'center' });
+      y += (doc.getTextDimensions(titleLines).h) + 10;
+      doc.setFont(undefined, 'normal');
 
-      for (const [index, page] of generatedStory.pages.entries()) {
-        if (index > 0) doc.addPage();
-        y = margin;
+
+      for (const page of generatedStory.pages) {
+         if (y > margin) { // Check if we need a new page before adding content
+            y += 5; // Add some space before the next block
+            if (y > pageHeight - margin) {
+                doc.addPage();
+                y = margin;
+            }
+        }
         
         // Add Image
         if (page.imageUrl) {
           try {
             const img = new window.Image();
-            img.src = page.imageUrl;
-            await new Promise(resolve => img.onload = resolve);
+            img.crossOrigin = "anonymous";
+            
+            await new Promise((resolve, reject) => {
+              img.onload = resolve;
+              img.onerror = (err) => reject(new Error(`Image failed to load: ${err}`));
+              img.src = page.imageUrl;
+            });
             
             const imgProps = doc.getImageProperties(img);
             const imgHeight = (imgProps.height * maxLineWidth) / imgProps.width;
+
+            if (y + imgHeight > pageHeight - margin) {
+              doc.addPage();
+              y = margin;
+            }
+
             doc.addImage(page.imageUrl, 'PNG', margin, y, maxLineWidth, imgHeight);
             y += imgHeight + 10;
           } catch (e) {
             console.error("Could not add image to PDF", e);
+             if (y + 10 > pageHeight - margin) {
+              doc.addPage();
+              y = margin;
+            }
             doc.setFontSize(10);
             doc.setTextColor(150);
             doc.text("[Image could not be loaded]", margin, y);
@@ -123,7 +148,15 @@ export default function StoryGeneratorPage() {
         // Add Text
         doc.setFontSize(12);
         const textLines = doc.splitTextToSize(page.text, maxLineWidth);
+        const textHeight = doc.getTextDimensions(textLines).h;
+        
+        if (y + textHeight > pageHeight - margin) {
+            doc.addPage();
+            y = margin;
+        }
+
         doc.text(textLines, margin, y);
+        y += textHeight + 5;
       }
       
       const safeTitle = generatedStory.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
