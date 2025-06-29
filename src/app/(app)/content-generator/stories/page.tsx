@@ -7,23 +7,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, Sparkles, BookOpen, Download, Heart, ThumbsDown, MessageCircle, Share2, Loader2 } from "lucide-react";
+import { FileText, Sparkles, BookOpen, Download, Loader2, Copy } from "lucide-react";
 import Image from "next/image";
 import { generateStoryWithImages, type GenerateStoryWithImagesInput, type GenerateStoryWithImagesOutput } from '@/ai/flows/generate-story-with-images';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
 import Link from 'next/link';
-import { useSoundSettings } from '@/hooks/useSoundSettings'; // Added
-import { playNotificationSound } from '@/utils/audioPlayer'; // Added
+import { useSoundSettings } from '@/hooks/useSoundSettings';
+import { playNotificationSound } from '@/utils/audioPlayer';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable'; // For better text handling if needed, though we'll do it manually
 
 export default function StoryGeneratorPage() {
   const [topic, setTopic] = useState<string>("");
   const [length, setLength] = useState<"short" | "medium" | "long">("medium");
   const [generatedStory, setGeneratedStory] = useState<GenerateStoryWithImagesOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const { soundSettings } = useSoundSettings(); // Added
+  const { soundSettings } = useSoundSettings();
 
   const showUpgradeToast = () => {
     toast({
@@ -65,7 +68,7 @@ export default function StoryGeneratorPage() {
       setGeneratedStory(result);
       recordFeatureUsage(FEATURE_NAMES.STORIES);
       toast({ title: "Success", description: "Story generated successfully!" });
-      playNotificationSound(soundSettings); // Added
+      playNotificationSound(soundSettings);
     } catch (error) {
       console.error("Error generating story:", error);
       toast({ title: "Error", description: "Failed to generate story. " + (error as Error).message, variant: "destructive" });
@@ -74,6 +77,73 @@ export default function StoryGeneratorPage() {
       setIsLoading(false);
       setTimeout(() => setProgress(0), 1500);
     }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!generatedStory) return;
+    setIsDownloading(true);
+    toast({ title: "Preparing PDF...", description: "This may take a moment." });
+
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 15;
+      const maxLineWidth = pageWidth - margin * 2;
+      let y = margin;
+
+      // Add Title
+      doc.setFontSize(22);
+      doc.text(generatedStory.title, pageWidth / 2, y, { align: 'center' });
+      y += 15;
+
+      for (const [index, page] of generatedStory.pages.entries()) {
+        if (index > 0) doc.addPage();
+        y = margin;
+        
+        // Add Image
+        if (page.imageUrl) {
+          try {
+            const img = new window.Image();
+            img.src = page.imageUrl;
+            await new Promise(resolve => img.onload = resolve);
+            
+            const imgProps = doc.getImageProperties(img);
+            const imgHeight = (imgProps.height * maxLineWidth) / imgProps.width;
+            doc.addImage(page.imageUrl, 'PNG', margin, y, maxLineWidth, imgHeight);
+            y += imgHeight + 10;
+          } catch (e) {
+            console.error("Could not add image to PDF", e);
+            doc.setFontSize(10);
+            doc.setTextColor(150);
+            doc.text("[Image could not be loaded]", margin, y);
+            y += 10;
+            doc.setTextColor(0);
+          }
+        }
+        
+        // Add Text
+        doc.setFontSize(12);
+        const textLines = doc.splitTextToSize(page.text, maxLineWidth);
+        doc.text(textLines, margin, y);
+      }
+      
+      const safeTitle = generatedStory.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      doc.save(`${safeTitle || 'ai_story'}.pdf`);
+
+    } catch (error) {
+      console.error("Failed to generate PDF:", error);
+      toast({ title: "PDF Error", description: "Could not generate the PDF. " + (error as Error).message, variant: "destructive" });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+  
+  const handleCopyStory = () => {
+      if (!generatedStory) return;
+      const fullText = generatedStory.title + "\n\n" + generatedStory.pages.map(p => p.text).join("\n\n");
+      navigator.clipboard.writeText(fullText)
+        .then(() => toast({title: "Copied!", description: "The full story text has been copied to your clipboard."}))
+        .catch(() => toast({title: "Error", description: "Could not copy the story.", variant: "destructive"}));
   };
 
   return (
@@ -154,11 +224,14 @@ export default function StoryGeneratorPage() {
                   ))}
                 </ScrollArea>
                 <div className="flex flex-wrap gap-2 justify-center pt-4 border-t">
-                  <Button variant="ghost" size="icon"><Heart className="h-5 w-5 text-red-500" /></Button>
-                  <Button variant="ghost" size="icon"><ThumbsDown className="h-5 w-5" /></Button>
-                  <Button variant="ghost" size="icon"><MessageCircle className="h-5 w-5" /></Button>
-                  <Button variant="ghost" size="icon"><Share2 className="h-5 w-5" /></Button>
-                  <Button><Download className="mr-2 h-5 w-5" /> Download as PDF (Soon)</Button>
+                  <Button onClick={handleCopyStory} variant="outline" disabled={isDownloading}>
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copy Story Text
+                  </Button>
+                  <Button onClick={handleDownloadPdf} disabled={isDownloading}>
+                    {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                    {isDownloading ? 'Generating PDF...' : 'Download as PDF'}
+                  </Button>
                 </div>
               </div>
             )}

@@ -43,6 +43,9 @@
     /* Default Font Families */
     --font-family-body: 'Alegreya', serif;
     --font-family-headline: 'Belleza', sans-serif;
+    
+    /* Accessibility Font Size */
+    --font-scale-factor: 1.0;
   }
 
   .dark {
@@ -79,10 +82,6 @@
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 291 25% 10%;
     --sidebar-ring: 340 82% 62%;
-
-    /* Default Font Families for Dark Mode (can be same or different) */
-    --font-family-body: 'Alegreya', serif;
-    --font-family-headline: 'Belleza', sans-serif;
   }
 
   /* Font Theme Overrides */
@@ -107,18 +106,23 @@
     --font-family-headline: 'Merriweather', serif;
   }
   body[data-font-theme="playfair"] {
-    /* Playfair Display is often better for headlines, paired with a simpler body */
-    --font-family-body: 'Alegreya', serif; /* Example: keeping Alegreya for body */
+    --font-family-body: 'Alegreya', serif;
     --font-family-headline: 'Playfair Display', serif;
   }
   body[data-font-theme="lobster"] {
-    --font-family-body: 'Alegreya', serif; /* Lobster is very decorative, better for headlines */
+    --font-family-body: 'Alegreya', serif;
     --font-family-headline: 'Lobster', cursive;
   }
   body[data-font-theme="caveat"] {
     --font-family-body: 'Caveat', cursive;
     --font-family-headline: 'Caveat', cursive;
   }
+  
+  /* Accessibility Text Size Scaling */
+  html[data-text-size="sm"] { --font-scale-factor: 0.875; }
+  html[data-text-size="md"] { --font-scale-factor: 1.0; }
+  html[data-text-size="lg"] { --font-scale-factor: 1.125; }
+  html[data-text-size="xl"] { --font-scale-factor: 1.25; }
 }
 
 @layer base {
@@ -127,9 +131,9 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-family-body); /* Apply body font */
+    font-family: var(--font-family-body);
+    font-size: calc(1rem * var(--font-scale-factor));
   }
-  /* Ensure headlines use the headline font by targeting specific elements or using a class */
   h1, h2, h3, h4, h5, h6, .font-headline {
     font-family: var(--font-family-headline);
   }
@@ -161,7 +165,6 @@
     animation: loading-bar-animation 1.5s ease-in-out;
   }
 
-  /* New Logo Animations */
   @keyframes pro-move {
     0%, 100% { transform: translateX(0); }
     50% { transform: translateX(-140px); }
@@ -189,7 +192,6 @@
     animation: pete-hide 5s ease-in-out infinite;
   }
 
-  /* New gradient text animation */
   .animated-gradient-text {
     background-image: linear-gradient(
       -225deg,

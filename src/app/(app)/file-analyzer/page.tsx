@@ -6,15 +6,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, FileText, Search, Heart, ThumbsDown, MessageCircle, Share2, Loader2 } from "lucide-react";
+import { Upload, FileText, Search, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { analyzeUploadedFile, type AnalyzeUploadedFileInput, type AnalyzeUploadedFileOutput } from '@/ai/flows/analyze-uploaded-file';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
 import Link from 'next/link';
-import { useSoundSettings } from '@/hooks/useSoundSettings'; // Added
-import { playNotificationSound } from '@/utils/audioPlayer'; // Added
+import { useSoundSettings } from '@/hooks/useSoundSettings';
+import { playNotificationSound } from '@/utils/audioPlayer';
 
 export default function FileAnalyzerPage() {
   const [fileDataUri, setFileDataUri] = useState<string | null>(null);
@@ -23,7 +23,7 @@ export default function FileAnalyzerPage() {
   const [analysisResult, setAnalysisResult] = useState<AnalyzeUploadedFileOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const { soundSettings } = useSoundSettings(); // Added
+  const { soundSettings } = useSoundSettings();
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -78,7 +78,7 @@ export default function FileAnalyzerPage() {
       setAnalysisResult(result);
       recordFeatureUsage(FEATURE_NAMES.FILE_ANALYZER);
       toast({ title: "Success", description: "File analyzed successfully!" });
-      playNotificationSound(soundSettings); // Added
+      playNotificationSound(soundSettings);
     } catch (error) {
       console.error("Error analyzing file:", error);
       toast({ title: "Error", description: "Failed to analyze file. " + (error as Error).message, variant: "destructive" });
@@ -161,12 +161,6 @@ export default function FileAnalyzerPage() {
                   ) : (
                     <p className="text-muted-foreground p-3 bg-secondary/30 rounded-md">No text extracted or not applicable.</p>
                   )}
-                </div>
-                 <div className="mt-6 flex flex-wrap gap-2 justify-center border-t pt-4">
-                    <Button variant="ghost" size="icon"><Heart className="h-5 w-5 text-red-500" /></Button>
-                    <Button variant="ghost" size="icon"><ThumbsDown className="h-5 w-5" /></Button>
-                    <Button variant="ghost" size="icon"><MessageCircle className="h-5 w-5" /></Button>
-                    <Button variant="ghost" size="icon"><Share2 className="h-5 w-5" /></Button>
                 </div>
               </div>
             )}

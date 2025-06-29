@@ -71,7 +71,6 @@ const navItems = [
   { href: '/faq', label: 'FAQ', icon: HelpCircle },
 ];
 
-
 export function NavLinks() {
   const pathname = usePathname();
 
@@ -90,7 +89,7 @@ export function NavLinks() {
                   isGroupActive && "text-sidebar-primary"
                 )}>
                 <item.icon className={cn("h-4 w-4", isGroupActive && "text-sidebar-primary")} />
-                <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                <span className="truncate group-data-[collapsible=icon]:hidden">{item.label}</span>
               </div>
               <ul className="pl-4 group-data-[collapsible=icon]:pl-0">
                 {item.subItems.map((subItem) => (
@@ -108,7 +107,7 @@ export function NavLinks() {
                       >
                         <span>
                           <subItem.icon className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
-                          <span className="group-data-[collapsible=icon]:hidden">{subItem.label}</span>
+                          <span className="truncate group-data-[collapsible=icon]:hidden">{subItem.label}</span>
                         </span>
                       </SidebarMenuButton>
                     </Link>
@@ -132,7 +131,7 @@ export function NavLinks() {
             >
               <span>
                 <item.icon className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
-                <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                <span className="truncate group-data-[collapsible=icon]:hidden">{item.label}</span>
               </span>
             </SidebarMenuButton>
           </Link>

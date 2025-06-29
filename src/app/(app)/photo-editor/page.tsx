@@ -5,18 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Wand2, Trash2, RefreshCw, Download, Heart, ThumbsDown, MessageCircle, Share2 } from "lucide-react";
+import { Upload, Wand2, Trash2, Download, Share2 } from "lucide-react";
 import Image from "next/image";
 import { aiPhotoEnhancer, type AiPhotoEnhancerInput, type AiPhotoEnhancerOutput } from '@/ai/flows/ai-photo-enhancer';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
 import Link from 'next/link';
-import { useSoundSettings } from '@/hooks/useSoundSettings'; // Added
-import { playNotificationSound } from '@/utils/audioPlayer'; // Added
+import { useSoundSettings } from '@/hooks/useSoundSettings';
+import { playNotificationSound } from '@/utils/audioPlayer';
 
 export default function PhotoEditorPage() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -24,7 +23,7 @@ export default function PhotoEditorPage() {
   const [enhancementDetails, setEnhancementDetails] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const { soundSettings } = useSoundSettings(); // Added
+  const { soundSettings } = useSoundSettings();
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -74,7 +73,7 @@ export default function PhotoEditorPage() {
       setEnhancementDetails(result.enhancementDetails);
       recordFeatureUsage(FEATURE_NAMES.PHOTO_EDITOR);
       toast({ title: "Success", description: "Image enhanced successfully!" });
-      playNotificationSound(soundSettings); // Added
+      playNotificationSound(soundSettings);
     } catch (error) {
       console.error("Error enhancing image:", error);
       toast({ title: "Error", description: "Failed to enhance image. " + (error as Error).message, variant: "destructive" });
@@ -82,6 +81,39 @@ export default function PhotoEditorPage() {
     } finally {
       setIsLoading(false);
       setTimeout(() => setProgress(0), 1500); 
+    }
+  };
+  
+  const handleShare = async () => {
+    if (!enhancedImage) {
+        toast({ title: "Nothing to share", description: "Please enhance an image first.", variant: "destructive" });
+        return;
+    }
+    if (navigator.share) {
+        try {
+            const blob = await (await fetch(enhancedImage)).blob();
+            const file = new File([blob], `petediano_enhanced_${Date.now()}.png`, { type: blob.type });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    title: 'Image Enhanced with Petediano Pro',
+                    text: 'Check out this image I enhanced using Petediano Pro!',
+                    files: [file],
+                });
+                toast({ title: "Shared successfully!"});
+            } else {
+                 await navigator.share({
+                    title: 'Image Enhanced with Petediano Pro',
+                    text: 'Check out this image I enhanced using Petediano Pro!',
+                    url: enhancedImage,
+                });
+            }
+        } catch (error) {
+            if ((error as DOMException).name !== 'AbortError') {
+              toast({ title: "Sharing failed", description: "Could not share the image.", variant: "destructive" });
+            }
+        }
+    } else {
+        toast({ title: "Sharing not available", description: "Your browser does not support the Web Share API.", variant: "destructive" });
     }
   };
 
@@ -180,10 +212,7 @@ export default function PhotoEditorPage() {
             )}
              {enhancedImage && (
               <div className="mt-6 flex flex-wrap gap-2 justify-center">
-                <Button variant="ghost" size="icon"><Heart className="h-5 w-5" /></Button>
-                <Button variant="ghost" size="icon"><ThumbsDown className="h-5 w-5" /></Button>
-                <Button variant="ghost" size="icon"><MessageCircle className="h-5 w-5" /></Button>
-                <Button variant="ghost" size="icon"><Share2 className="h-5 w-5" /></Button>
+                <Button variant="outline" onClick={handleShare}><Share2 className="mr-2 h-4 w-4" /> Share</Button>
                 <Button asChild><a href={enhancedImage} download={`petediano_enhanced_${Date.now()}.png`}><Download className="mr-2 h-5 w-5" /> Download</a></Button>
               </div>
             )}

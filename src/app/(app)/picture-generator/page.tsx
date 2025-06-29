@@ -7,21 +7,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ImageIcon, Sparkles, Download, Heart, ThumbsDown, Share2, Loader2 } from "lucide-react";
+import { ImageIcon, Sparkles, Download, Share2, Loader2, Copy } from "lucide-react";
 import Image from "next/image";
 import { generateOriginalPictures, type GenerateOriginalPicturesInput, type GenerateOriginalPicturesOutput } from '@/ai/flows/generate-original-pictures';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
 import Link from 'next/link';
-import { useSoundSettings } from '@/hooks/useSoundSettings'; // Added
-import { playNotificationSound } from '@/utils/audioPlayer'; // Added
+import { useSoundSettings } from '@/hooks/useSoundSettings';
+import { playNotificationSound } from '@/utils/audioPlayer';
 
 const imageTypes = ["picture", "wallpaper", "logo", "flyer", "collage", "social media post"];
 const aspectRatios = ["16:9", "1:1", "4:5", "9:16", "4:3", "3:4"];
 const fonts = ["Arial", "Verdana", "Times New Roman", "Courier New", "Belleza", "Alegreya"];
-
 
 export default function PictureGeneratorPage() {
   const [promptText, setPromptText] = useState<string>("");
@@ -34,9 +32,7 @@ export default function PictureGeneratorPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
-  const [feedbackText, setFeedbackText] = useState("");
-  const { soundSettings } = useSoundSettings(); // Added
+  const { soundSettings } = useSoundSettings();
 
   const showUpgradeToast = () => {
     toast({
@@ -79,7 +75,7 @@ export default function PictureGeneratorPage() {
       setGeneratedImageUrl(result.imageUrl);
       recordFeatureUsage(FEATURE_NAMES.PICTURE_GENERATOR);
       toast({ title: "Success", description: "Picture generated successfully!" });
-      playNotificationSound(soundSettings); // Added
+      playNotificationSound(soundSettings);
     } catch (error) {
       console.error("Error generating picture:", error);
       toast({ title: "Error", description: "Failed to generate picture. " + (error as Error).message, variant: "destructive" });
@@ -97,54 +93,30 @@ export default function PictureGeneratorPage() {
     }
     if (navigator.share) {
         try {
-            // Convert data URI to Blob for sharing as a file if possible
-            let shareData: ShareData = {
-                title: 'AI Generated Picture by Petediano Pro',
-                text: `Check out this image I generated with Petediano Pro! Prompt: "${promptText}"`,
-            };
-
-            if (generatedImageUrl.startsWith('data:')) {
-                const blob = await (await fetch(generatedImageUrl)).blob();
-                const file = new File([blob], `petediano_art_${Date.now()}.png`, { type: blob.type });
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    shareData.files = [file];
-                } else {
-                    // Fallback to sharing URL if file sharing not fully supported for data URIs
-                    shareData.url = generatedImageUrl;
-                }
+            const blob = await (await fetch(generatedImageUrl)).blob();
+            const file = new File([blob], `petediano_art_${Date.now()}.png`, { type: blob.type });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    title: 'AI Generated Picture by Petediano Pro',
+                    text: `Check out this image I generated with Petediano Pro! Prompt: "${promptText}"`,
+                    files: [file],
+                });
+                toast({ title: "Shared successfully!"});
             } else {
-                 shareData.url = generatedImageUrl;
+                 await navigator.share({
+                    title: 'AI Generated Picture by Petediano Pro',
+                    text: `Check out this image I generated with Petediano Pro! Prompt: "${promptText}"`,
+                    url: generatedImageUrl,
+                });
             }
-            
-            await navigator.share(shareData);
-            toast({ title: "Shared successfully!"});
         } catch (error) {
-            console.error('Error sharing:', error);
             if ((error as DOMException).name !== 'AbortError') {
-              // Try copying to clipboard as fallback
-              try {
-                await navigator.clipboard.writeText(generatedImageUrl);
-                toast({ title: "Copied to Clipboard", description: "Image data URI copied. Direct sharing might not be supported or was cancelled."});
-              } catch (copyError) {
-                 toast({ title: "Sharing failed", description: (error as Error).message, variant: "destructive" });
-              }
+              toast({ title: "Sharing failed", description: "Could not share the image.", variant: "destructive" });
             }
         }
     } else {
-        try {
-            await navigator.clipboard.writeText(generatedImageUrl);
-            toast({ title: "Link Copied!", description: "Image URL copied to clipboard as sharing is not available."});
-        } catch (err) {
-            toast({ title: "Sharing not available", description: "Web Share API not supported and could not copy to clipboard.", variant: "destructive" });
-        }
+        toast({ title: "Sharing not available", description: "Your browser does not support the Web Share API.", variant: "destructive" });
     }
-  };
-
-  const handleSendFeedback = () => {
-    console.log("Feedback received:", feedbackText); // In a real app, send this to a backend
-    toast({ title: "Feedback Sent", description: "Thank you for your feedback!" });
-    setFeedbackText("");
-    setIsFeedbackDialogOpen(false);
   };
 
   return (
@@ -223,39 +195,7 @@ export default function PictureGeneratorPage() {
                   <Image src={generatedImageUrl} alt="Generated picture" layout="fill" objectFit="contain" data-ai-hint="generated image art" />
                 </div>
                 <div className="flex flex-wrap gap-2 justify-center">
-                  <Button variant="ghost" size="icon"><Heart className="h-5 w-5 text-red-500" /></Button>
-                  
-                  <Dialog open={isFeedbackDialogOpen} onOpenChange={setIsFeedbackDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <ThumbsDown className="h-5 w-5" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Provide Feedback</DialogTitle>
-                        <DialogDescription>
-                          We're sorry you didn't like the image. Please tell us what went wrong or how we can improve.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="py-4">
-                        <Textarea
-                          placeholder="Your feedback..."
-                          value={feedbackText}
-                          onChange={(e) => setFeedbackText(e.target.value)}
-                          rows={4}
-                        />
-                      </div>
-                      <DialogFooter>
-                         <DialogClose asChild>
-                           <Button variant="outline">Cancel</Button>
-                         </DialogClose>
-                        <Button onClick={handleSendFeedback} disabled={!feedbackText.trim()}>Send Feedback</Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-
-                  <Button variant="ghost" size="icon" onClick={handleShare}><Share2 className="h-5 w-5" /></Button>
+                  <Button variant="outline" onClick={handleShare}><Share2 className="mr-2 h-4 w-4" /> Share</Button>
                   <Button asChild>
                     <a href={generatedImageUrl} download={`petediano_pro_art_${Date.now()}.png`}>
                       <Download className="mr-2 h-5 w-5" /> Download

@@ -20,4 +20,3 @@ import '@/ai/flows/generate-recipe.ts';
 import '@/ai/flows/generate-trip-plan.ts';
 import '@/ai/flows/generate-image-caption.ts';
 import '@/ai/flows/explain-code.ts';
-    

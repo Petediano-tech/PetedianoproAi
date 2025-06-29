@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from '@/components/theme-provider';
 import { OnlineStatusProvider } from '@/context/OnlineStatusProvider';
 import { FontProvider } from '@/components/providers/FontProvider';
+import { AccessibilityProvider } from '@/context/AccessibilityProvider';
 import { AVAILABLE_FONTS } from '@/lib/fonts.config';
 
 export const metadata: Metadata = {
@@ -41,9 +42,11 @@ export default function RootLayout({
             disableTransitionOnChange
         >
           <FontProvider>
-            <OnlineStatusProvider>
-              {children}
-            </OnlineStatusProvider>
+            <AccessibilityProvider>
+              <OnlineStatusProvider>
+                {children}
+              </OnlineStatusProvider>
+            </AccessibilityProvider>
           </FontProvider>
           <Toaster />
         </ThemeProvider>

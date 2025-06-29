@@ -32,7 +32,7 @@ export function Logo(props: SVGProps<SVGSVGElement>) {
       </g>
       <g className="animate-diano-hide">
         <text
-          x="68"
+          x="72"
           y="35"
           fontFamily="Belleza, sans-serif"
           fontSize="30"

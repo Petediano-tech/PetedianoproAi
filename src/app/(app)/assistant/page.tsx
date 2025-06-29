@@ -3,15 +3,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Bot, User, Send, Sparkles, Loader2 } from "lucide-react";
 import { peteAiAssistant, type PeteAiAssistantInput, type PeteAiAssistantOutput } from '@/ai/flows/peteai-assistant';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { useSoundSettings } from '@/hooks/useSoundSettings'; // Added
-import { playNotificationSound } from '@/utils/audioPlayer'; // Added
+import { useSoundSettings } from '@/hooks/useSoundSettings'; 
+import { playNotificationSound } from '@/utils/audioPlayer'; 
 
 interface Message {
   id: string;
@@ -25,7 +25,19 @@ export default function AssistantPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const { soundSettings } = useSoundSettings(); // Added
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { soundSettings } = useSoundSettings(); 
+
+  const adjustTextareaHeight = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'; // Reset height
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  };
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [query]);
 
   useEffect(() => {
     // Scroll to bottom when new messages are added
@@ -61,7 +73,7 @@ export default function AssistantPage() {
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, aiMessage]);
-      playNotificationSound(soundSettings); // Added
+      playNotificationSound(soundSettings); 
     } catch (error) {
       console.error("Error with PeteAI Assistant:", error);
       toast({ title: "Error", description: "PeteAI Assistant is currently unavailable. " + (error as Error).message, variant: "destructive" });
@@ -74,6 +86,13 @@ export default function AssistantPage() {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey && !isLoading) {
+      e.preventDefault();
+      handleSendMessage();
     }
   };
 
@@ -143,13 +162,14 @@ export default function AssistantPage() {
         </CardContent>
         <div className="border-t p-4">
           <div className="flex items-center gap-2">
-            <Input
-              type="text"
-              placeholder="Type your message to PeteAI..."
+            <Textarea
+              ref={textareaRef}
+              rows={1}
+              placeholder="Type your message to PeteAI... (Shift+Enter for new line)"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleSendMessage()}
-              className="flex-grow"
+              onKeyDown={handleKeyDown}
+              className="flex-grow resize-none max-h-40 overflow-y-auto"
               disabled={isLoading}
             />
             <Button onClick={handleSendMessage} disabled={isLoading || !query.trim()}>
