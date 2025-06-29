@@ -16,17 +16,9 @@ import {googleAI} from '@genkit-ai/googleai';
 const animeStyles = ['Vibrant Shonen', 'Elegant Shojo', 'Chibi/Kawaii', 'Classic 90s', 'Dark Fantasy', 'Cyberpunk', 'Studio Ghibli-esque'] as const;
 const availableVoices = {
   // Male Voices
-  'achernar': 'Achernar',
-  'algenib': 'Algenib',
-  'gacrux': 'Gacrux',
-  'rasalgethi': 'Rasalgethi',
-  'schedar': 'Schedar',
-  'sulafat': 'Sulafat',
-  'zubenelgenubi': 'Zubenelgenubi',
-  'charon': 'Charon',
+  'achernar': 'Achernar', 'algenib': 'Algenib', 'gacrux': 'Gacrux', 'rasalgethi': 'Rasalgethi', 'schedar': 'Schedar', 'sulafat': 'Sulafat', 'zubenelgenubi': 'Zubenelgenubi', 'charon': 'Charon', 'puck': 'Puck',
   // Female Voices
-  'aoede': 'Aoede',
-  'leda': 'Leda',
+  'aoede': 'Aoede', 'leda': 'Leda', 'callirrhoe': 'Callirrhoe', 'autonoe': 'Autonoe', 'erinome': 'Erinome', 'kore': 'Kore'
 } as const;
 const voiceEnum = z.enum(Object.keys(availableVoices) as [keyof typeof availableVoices, ...(keyof typeof availableVoices)[]]);
 
@@ -126,8 +118,8 @@ const generateAnimeStoryFlow = ai.defineFlow(
   async (input) => {
     // 1. Generate the story outline
     const outlineResult = await storyOutlinePrompt(input);
-    if (!outlineResult.output) {
-      throw new Error("Failed to generate a valid story outline from the AI.");
+    if (!outlineResult.output || !outlineResult.output.sceneDescriptions || outlineResult.output.sceneDescriptions.length === 0) {
+      throw new Error("The AI failed to generate a valid story outline. Please try adjusting your prompt.");
     }
     const { title, sceneDescriptions } = outlineResult.output;
 
@@ -193,6 +185,10 @@ const generateAnimeStoryFlow = ai.defineFlow(
         console.error(`Failed to process page for scene: "${scene}". Skipping. Error:`, error);
         // Continue to the next scene even if one fails
       }
+    }
+
+    if (finalPages.length === 0) {
+        throw new Error("The AI generated an outline, but failed to create any story pages. Please try again.");
     }
 
     return {
