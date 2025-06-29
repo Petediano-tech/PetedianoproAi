@@ -89,64 +89,56 @@ const generateStoryWithImagesFlow = ai.defineFlow(
     outputSchema: GenerateStoryWithImagesOutputSchema,
   },
   async input => {
-    try {
-      // 1. Generate the story outline
-      const outlineResult = await storyOutlinePrompt(input);
-      
-      if (!outlineResult.output || !outlineResult.output.sceneDescriptions || outlineResult.output.sceneDescriptions.length === 0) {
-        throw new Error("The AI failed to generate a valid story outline. Please try adjusting your topic.");
-      }
-
-      const {title, sceneDescriptions} = outlineResult.output;
-
-      const pages = [];
-      
-      // 2. For each scene, generate text and an image within a resilient loop
-      for (const sceneDescription of sceneDescriptions) {
-        try {
-          const pageResult = await storyPagePrompt({
-            topic: input.topic,
-            sceneDescription,
-          });
-
-          if (!pageResult.output?.text || !pageResult.output?.imageDescription) {
-            console.warn(`Skipping scene due to missing text or image description: "${sceneDescription}"`);
-            continue; // Skip to the next scene
-          }
-
-          const {media} = await ai.generate({
-            model: 'googleai/gemini-2.0-flash-preview-image-generation',
-            prompt: `Generate an illustration for a story. The scene is: "${pageResult.output.imageDescription}". The image should be artistic and visually compelling.`,
-            config: {
-              responseModalities: ['TEXT', 'IMAGE'],
-            },
-          });
-
-          if (!media?.url) {
-            console.warn(`Skipping scene due to missing image media for: "${sceneDescription}"`);
-            continue; // Skip to the next scene
-          }
-
-          pages.push({
-            text: pageResult.output.text,
-            imageUrl: media.url,
-          });
-        } catch (error) {
-          // Log the error for the specific page and continue with the next one
-          console.error(`Failed to process page for scene: "${sceneDescription}". Skipping. Error:`, error);
-        }
-      }
-
-      // 3. Final check to ensure at least some pages were created
-      if (pages.length === 0) {
-        throw new Error("The AI generated an outline, but failed to create any story pages. This could be due to content safety filters or other issues. Please try again.");
-      }
-
-      return {title, pages};
-    } catch (err) {
-        // Catch any fatal errors (like the initial outline failing) and report them
-        console.error("Fatal error in generateStoryWithImagesFlow:", err);
-        throw new Error(`An unexpected error occurred while generating the story. The AI may have returned an invalid response or a safety filter may have been triggered. Details: ${(err as Error).message}`);
+    // 1. Generate the story outline
+    const outlineResult = await storyOutlinePrompt(input);
+    
+    // If the outline generation fails, return a default empty story to prevent crashing.
+    if (!outlineResult?.output?.sceneDescriptions?.length) {
+      console.error("The AI failed to generate a valid story outline.");
+      return { title: "Story Generation Failed", pages: [] };
     }
+
+    const {title, sceneDescriptions} = outlineResult.output;
+    const pages = [];
+    
+    // 2. For each scene, generate text and an image within a resilient loop
+    for (const sceneDescription of sceneDescriptions) {
+      try {
+        const pageResult = await storyPagePrompt({
+          topic: input.topic,
+          sceneDescription,
+        });
+
+        // Skip this page if the AI failed to generate text or an image description.
+        if (!pageResult?.output?.text || !pageResult?.output?.imageDescription) {
+          console.warn(`Skipping scene due to missing text or image description: "${sceneDescription}"`);
+          continue; 
+        }
+
+        const {media} = await ai.generate({
+          model: 'googleai/gemini-2.0-flash-preview-image-generation',
+          prompt: `Generate an illustration for a story. The scene is: "${pageResult.output.imageDescription}". The image should be artistic and visually compelling.`,
+          config: {
+            responseModalities: ['TEXT', 'IMAGE'],
+          },
+        });
+
+        // Skip this page if the image generation service failed.
+        if (!media?.url) {
+          console.warn(`Skipping scene due to missing image media for: "${sceneDescription}"`);
+          continue;
+        }
+
+        pages.push({
+          text: pageResult.output.text,
+          imageUrl: media.url,
+        });
+      } catch (error) {
+        // Log the error for the specific page and continue with the next one.
+        console.error(`Failed to process page for scene: "${sceneDescription}". Skipping. Error:`, error);
+      }
+    }
+
+    return {title, pages};
   }
 );
