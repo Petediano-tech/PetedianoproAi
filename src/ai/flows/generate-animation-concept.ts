@@ -1,11 +1,11 @@
 
 'use server';
 /**
- * @fileOverview An AI agent for generating stories in an anime style, complete with images and audio.
+ * @fileOverview An AI agent for generating anime-style stories in discrete steps: text, then images, then audio.
  *
- * - generateAnimationConcept - Generates an anime-style story with pictures and audio.
- * - GenerateAnimationConceptInput - Input type.
- * - GenerateAnimationConceptOutput - Output type.
+ * - generateAnimationConceptText - Generates the story title and text for each scene.
+ * - generateImageForAnimationScene - Generates an image for a single scene.
+ * - generateAudioForAnimationScene - Generates audio narration for a single scene.
  */
 
 import {ai} from '@/ai/genkit';
@@ -13,38 +13,166 @@ import {z} from 'genkit';
 import wav from 'wav';
 import {googleAI} from '@genkit-ai/googleai';
 
+// --- SCHEMAS AND TYPES ---
+
 const animeStyles = ['Vibrant Shonen', 'Elegant Shojo', 'Chibi/Kawaii', 'Classic 90s', 'Dark Fantasy', 'Cyberpunk', 'Studio Ghibli-esque'] as const;
 const availableVoices = {
-  // Male Voices
   'achernar': 'Achernar', 'algenib': 'Algenib', 'gacrux': 'Gacrux', 'rasalgethi': 'Rasalgethi', 'schedar': 'Schedar', 'sulafat': 'Sulafat', 'zubenelgenubi': 'Zubenelgenubi', 'charon': 'Charon', 'puck': 'Puck',
-  // Female Voices
   'aoede': 'Aoede', 'leda': 'Leda', 'callirrhoe': 'Callirrhoe', 'autonoe': 'Autonoe', 'erinome': 'Erinome', 'kore': 'Kore'
 } as const;
 const voiceEnum = z.enum(Object.keys(availableVoices) as [keyof typeof availableVoices, ...(keyof typeof availableVoices)[]]);
 
-const GenerateAnimationConceptInputSchema = z.object({
-  prompt: z.string().describe('The main idea or scene for the story (e.g., "a cat who discovers a magical sword", "a detective solving a case in a cyberpunk city").'),
-  style: z.enum(animeStyles).default('Vibrant Shonen').describe('The desired anime art style for the generated images.'),
-  voice: voiceEnum.default('achernar').describe('The desired voice for the audio narration.'),
-  language: z.string().optional().default('English').describe('The language for the story text and narration (e.g., English, Chichewa).'),
+// Input for the initial text generation
+export const GenerateAnimationConceptTextInputSchema = z.object({
+  prompt: z.string().describe('The main idea or scene for the story.'),
+  style: z.enum(animeStyles).default('Vibrant Shonen').describe('The desired anime art style (will be used later for image generation).'),
+  language: z.string().optional().default('English').describe('The language for the story text and narration.'),
 });
-export type GenerateAnimationConceptInput = z.infer<typeof GenerateAnimationConceptInputSchema>;
+export type GenerateAnimationConceptTextInput = z.infer<typeof GenerateAnimationConceptTextInputSchema>;
 
-const StoryPageSchema = z.object({
-  text: z.string().describe('The text content of this part of the story.'),
-  imageUrl: z.string().describe('Data URI of the generated image for this page.'),
-  audioUrl: z.string().describe('Data URI of the generated audio narration for this page.'),
+// The output structure for the text generation step
+const StoryPageTextSchema = z.object({
+  text: z.string().describe('The narrative text for this scene.'),
+  sceneDescription: z.string().describe('The original, brief scene description this text was based on.'),
 });
-
-const GenerateAnimationConceptOutputSchema = z.object({
+export const GenerateAnimationConceptTextOutputSchema = z.object({
   title: z.string().describe('A catchy title for the story.'),
-  pages: z.array(StoryPageSchema).describe('A sequence of pages, each with text, a generated image, and generated audio.'),
+  pages: z.array(StoryPageTextSchema),
 });
-export type GenerateAnimationConceptOutput = z.infer<typeof GenerateAnimationConceptOutputSchema>;
+export type GenerateAnimationConceptTextOutput = z.infer<typeof GenerateAnimationConceptTextOutputSchema>;
 
-export async function generateAnimationConcept(input: GenerateAnimationConceptInput): Promise<GenerateAnimationConceptOutput> {
-  return generateAnimeStoryFlow(input);
+// Schemas for on-demand image and audio generation
+export const GenerateImageForSceneInputSchema = z.object({
+  sceneDescription: z.string().describe('The brief description for the scene to be visualized.'),
+  style: z.enum(animeStyles).describe('The desired anime art style.'),
+});
+export type GenerateImageForSceneInput = z.infer<typeof GenerateImageForSceneInputSchema>;
+export const GenerateImageForSceneOutputSchema = z.object({ imageUrl: z.string() });
+export type GenerateImageForSceneOutput = z.infer<typeof GenerateImageForSceneOutputSchema>;
+
+export const GenerateAudioForSceneInputSchema = z.object({
+  text: z.string().describe('The narrative text to be converted to speech.'),
+  voice: voiceEnum.describe('The desired voice for the narration.'),
+});
+export type GenerateAudioForSceneInput = z.infer<typeof GenerateAudioForSceneInputSchema>;
+export const GenerateAudioForSceneOutputSchema = z.object({ audioUrl: z.string() });
+export type GenerateAudioForSceneOutput = z.infer<typeof GenerateAudioForSceneOutputSchema>;
+
+
+// --- AI PROMPTS ---
+
+// 1. Prompt to generate the story outline (title and scene descriptions)
+const storyOutlinePrompt = ai.definePrompt({
+  name: 'animeStoryOutlinePrompt',
+  input: { schema: GenerateAnimationConceptTextInputSchema },
+  output: {
+    schema: z.object({
+      title: z.string().describe('A compelling and creative title for the story based on the prompt.'),
+      sceneDescriptions: z.array(z.string()).describe('A list of 3 to 5 brief descriptions for consecutive scenes that will form the story.'),
+    }),
+  },
+  prompt: `You are a creative anime storyteller. Based on the user's prompt, generate a title and a list of 3-5 scene descriptions that form a short story.
+
+Story Prompt: {{{prompt}}}
+Language: {{{language}}}
+
+Generate a title and scene descriptions in the specified language.
+`,
+  config: { temperature: 0.9 },
+});
+
+// 2. Prompt to write the narrative text for a given scene.
+const storyPageTextPrompt = ai.definePrompt({
+    name: 'animeStoryPageTextPrompt',
+    input: { schema: z.object({ sceneDescription: z.string(), language: z.string().optional() }) },
+    output: { schema: z.object({ pageText: z.string().describe('A paragraph of narrative text (about 50-100 words) describing the scene in an engaging way.') }) },
+    prompt: `You are an anime scriptwriter. Write an engaging paragraph of story text for the following scene description in the language: "{{{language}}}".
+
+Scene Description: "{{{sceneDescription}}}"`,
+    config: { temperature: 0.9 },
+});
+
+
+// --- EXPORTED FUNCTIONS / FLOWS ---
+
+/**
+ * Generates the text content (title and pages) for an anime-style story.
+ */
+export async function generateAnimationConceptText(input: GenerateAnimationConceptTextInput): Promise<GenerateAnimationConceptTextOutput> {
+  // Step 1: Generate the story outline (title and scene descriptions).
+  const outlineResult = await storyOutlinePrompt(input);
+  if (!outlineResult?.output?.sceneDescriptions?.length) {
+    console.error("The AI failed to generate a valid story outline.");
+    return { title: "Story Generation Failed", pages: [] };
+  }
+  const { title, sceneDescriptions } = outlineResult.output;
+
+  // Step 2: Generate the narrative text for each scene description.
+  const pages = await Promise.all(
+    sceneDescriptions.map(async (scene) => {
+      const pageTextResult = await storyPageTextPrompt({ sceneDescription: scene, language: input.language });
+      return {
+        text: pageTextResult?.output?.pageText || `Failed to generate text for: "${scene}"`,
+        sceneDescription: scene, // Pass the original description through
+      };
+    })
+  );
+
+  return { title, pages };
 }
+
+/**
+ * Generates an image for a single anime scene.
+ */
+export async function generateImageForAnimationScene(input: GenerateImageForSceneInput): Promise<GenerateImageForSceneOutput> {
+  const imagePrompt = `Generate a single, high-quality image in a ${input.style} anime style. The scene is: "${input.sceneDescription}". The image should be dynamic and expressive, capturing the essence of the scene.`;
+  
+  const { media } = await ai.generate({
+    model: 'googleai/gemini-2.0-flash-preview-image-generation',
+    prompt: imagePrompt,
+    config: { responseModalities: ['IMAGE', 'TEXT'] },
+  });
+
+  if (!media?.url) {
+    throw new Error('Image generation failed to return a valid URL.');
+  }
+  return { imageUrl: media.url };
+}
+
+/**
+ * Generates audio narration for a single piece of text.
+ */
+export async function generateAudioForAnimationScene(input: GenerateAudioForSceneInput): Promise<GenerateAudioForSceneOutput> {
+    const { media } = await ai.generate({
+      model: googleAI.model('gemini-2.5-flash-preview-tts'),
+      prompt: input.text,
+      config: {
+        responseModalities: ['AUDIO'],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: { voiceName: input.voice as any },
+          },
+        },
+      },
+    });
+
+    if (!media?.url) {
+        throw new Error('Audio generation failed to return valid data.');
+    }
+        
+    const pcmAudioData = media.url;
+    const audioBuffer = Buffer.from(
+      pcmAudioData.substring(pcmAudioData.indexOf(',') + 1),
+      'base64'
+    );
+    const wavBase64 = await toWav(audioBuffer);
+    const audioUrl = `data:audio/wav;base64,${wavBase64}`;
+
+    return { audioUrl };
+}
+
+
+// --- HELPERS ---
 
 async function toWav(
   pcmData: Buffer,
@@ -66,136 +194,3 @@ async function toWav(
     writer.end();
   });
 }
-
-// 1. A prompt to generate the story outline (title and scenes)
-const storyOutlinePrompt = ai.definePrompt({
-  name: 'animeStoryOutlinePrompt',
-  input: { schema: GenerateAnimationConceptInputSchema },
-  output: {
-    schema: z.object({
-      title: z.string().describe('A compelling and creative title for the story based on the prompt.'),
-      sceneDescriptions: z.array(z.string()).describe('A list of 3 to 5 brief descriptions for consecutive scenes that will form the story. Each description should capture a moment or action.'),
-    }),
-  },
-  prompt: `You are a creative anime storyteller. Based on the user's prompt, generate a title and a list of 3-5 scene descriptions that form a short story.
-
-Story Prompt: {{{prompt}}}
-Language: {{{language}}}
-
-Generate a title and scene descriptions in the specified language.
-`,
-  config: {
-    temperature: 0.9,
-  },
-});
-
-// 2. A prompt to generate the image for a given scene.
-function createImagePrompt(scene: string, style: string) {
-    return `Generate a single, high-quality image in a ${style} anime style. The scene is: "${scene}". The image should be dynamic and expressive, capturing the essence of the scene.`;
-}
-
-// 3. A prompt to write the narrative text for a given scene.
-const storyPageTextPrompt = ai.definePrompt({
-    name: 'animeStoryPageTextPrompt',
-    input: { schema: z.object({ sceneDescription: z.string(), language: z.string().optional() }) },
-    output: { schema: z.object({ pageText: z.string().describe('A paragraph of narrative text (about 50-100 words) describing the scene in an engaging way.') }) },
-    prompt: `You are an anime scriptwriter. Write an engaging paragraph of story text for the following scene description in the language: "{{{language}}}".
-
-Scene Description: "{{{sceneDescription}}}"`,
-    config: {
-        temperature: 0.9,
-    },
-});
-
-
-// 4. The main flow that ties it all together
-const generateAnimeStoryFlow = ai.defineFlow(
-  {
-    name: 'generateAnimeStoryFlow',
-    inputSchema: GenerateAnimationConceptInputSchema,
-    outputSchema: GenerateAnimationConceptOutputSchema,
-  },
-  async (input) => {
-    // 1. Generate the story outline
-    const outlineResult = await storyOutlinePrompt(input);
-
-    // If outline generation fails, return a default empty story to prevent crashing.
-    if (!outlineResult?.output?.sceneDescriptions?.length) {
-      console.error("The AI failed to generate a valid story outline.");
-      return { title: "Story Generation Failed", pages: [] };
-    }
-    const { title, sceneDescriptions } = outlineResult.output;
-
-    const finalPages: z.infer<typeof StoryPageSchema>[] = [];
-
-    // 2. For each scene, generate text, image, and audio within a resilient loop.
-    for (const scene of sceneDescriptions) {
-      try {
-        const pageTextResult = await storyPageTextPrompt({ sceneDescription: scene, language: input.language });
-        const text = pageTextResult?.output?.pageText;
-
-        // Skip this page if AI failed to generate text.
-        if (!text) {
-            console.warn(`Skipping scene due to empty text generation: "${scene}"`);
-            continue;
-        }
-
-        const [imageGenerationResult, audioGenerationResult] = await Promise.all([
-          // Image generation
-          ai.generate({
-            model: 'googleai/gemini-2.0-flash-preview-image-generation',
-            prompt: createImagePrompt(scene, input.style),
-            config: {
-              responseModalities: ['IMAGE', 'TEXT'],
-            },
-          }),
-          // Audio generation
-          ai.generate({
-            model: googleAI.model('gemini-2.5-flash-preview-tts'),
-            prompt: text,
-            config: {
-              responseModalities: ['AUDIO'],
-              speechConfig: {
-                voiceConfig: {
-                  prebuiltVoiceConfig: { voiceName: input.voice as any },
-                },
-              },
-            },
-          }),
-        ]);
-        
-        const imageUrl = imageGenerationResult?.media?.url;
-        const pcmAudioData = audioGenerationResult?.media?.url;
-        
-        // Skip this page if either image or audio generation failed.
-        if (!imageUrl || !pcmAudioData) {
-            console.warn(`Skipping scene due to missing media for: "${scene}"`);
-            continue;
-        }
-        
-        const audioBuffer = Buffer.from(
-          pcmAudioData.substring(pcmAudioData.indexOf(',') + 1),
-          'base64'
-        );
-        const wavBase64 = await toWav(audioBuffer);
-        const audioUrl = `data:audio/wav;base64,${wavBase64}`;
-
-        finalPages.push({
-          text,
-          imageUrl,
-          audioUrl,
-        });
-
-      } catch (error) {
-        // Log the error for this specific page and continue with the next one.
-        console.error(`Failed to process page for scene: "${scene}". Skipping. Error:`, error);
-      }
-    }
-
-    // Return whatever was successfully generated, even if it's an empty list.
-    return {
-      title,
-      pages: finalPages,
-    };
-  }
-);

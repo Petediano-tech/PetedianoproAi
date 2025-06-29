@@ -2,29 +2,45 @@
 "use client";
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, Sparkles, BookOpen, Download, Loader2, Copy } from "lucide-react";
+import { FileText, Sparkles, BookOpen, Download, Loader2, Copy, ImageIcon, BookText } from "lucide-react";
 import Image from "next/image";
-import { generateStoryWithImages, type GenerateStoryWithImagesInput, type GenerateStoryWithImagesOutput } from '@/ai/flows/generate-story-with-images';
+import { 
+  generateStoryText, type GenerateStoryTextInput,
+  generateStoryImage, type GenerateStoryImageInput
+} from '@/ai/flows/generate-story-with-images';
 import { toast } from '@/hooks/use-toast';
-import { Progress } from '@/components/ui/progress';
 import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
 import Link from 'next/link';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
 import jsPDF from 'jspdf';
 
+interface PageState {
+  text: string;
+  imageDescription: string;
+  imageUrl?: string;
+  isImageLoading: boolean;
+}
+
+interface StoryState {
+  title: string;
+  pages: PageState[];
+}
+
 export default function StoryGeneratorPage() {
   const [topic, setTopic] = useState<string>("");
   const [length, setLength] = useState<"short" | "medium" | "long">("medium");
-  const [generatedStory, setGeneratedStory] = useState<GenerateStoryWithImagesOutput | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [story, setStory] = useState<StoryState | null>(null);
+
+  const [isStoryLoading, setIsStoryLoading] = useState(false);
+  const [isBatchImageLoading, setIsBatchImageLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [progress, setProgress] = useState(0);
+  
   const { soundSettings } = useSoundSettings();
 
   const showUpgradeToast = () => {
@@ -32,54 +48,79 @@ export default function StoryGeneratorPage() {
       title: "Daily Limit Reached",
       description: "You've used all your free story generations for today.",
       variant: "destructive",
-      action: (
-        <Link href="/vip">
-          <Button variant="secondary" size="sm">Upgrade to VIP</Button>
-        </Link>
-      ),
+      action: ( <Link href="/vip"> <Button variant="secondary" size="sm">Upgrade to VIP</Button> </Link> ),
     });
   };
 
-  const handleGenerateStory = async () => {
+  const handleGenerateStoryText = async () => {
     if (!topic) {
       toast({ title: "Error", description: "Please enter a topic for the story.", variant: "destructive" });
       return;
     }
-
     if (!canUseFeature(FEATURE_NAMES.STORIES)) {
-      showUpgradeToast();
-      return;
+      showUpgradeToast(); return;
     }
 
-    setIsLoading(true);
-    setProgress(10); 
-    setGeneratedStory(null);
+    setIsStoryLoading(true);
+    setStory(null);
     try {
-      const input: GenerateStoryWithImagesInput = { topic, length };
-      const progressInterval = setInterval(() => {
-        setProgress(prev => Math.min(prev + 5, 90));
-      }, 500);
+      const input: GenerateStoryTextInput = { topic, length };
+      const result = await generateStoryText(input);
 
-      const result = await generateStoryWithImages(input);
+      if (result.pages.length === 0) {
+        toast({ title: "Generation Failed", description: "The AI could not create a story from your prompt. Please try again.", variant: "destructive"});
+        return;
+      }
       
-      clearInterval(progressInterval);
-      setProgress(100);
-      setGeneratedStory(result);
+      setStory({
+        title: result.title,
+        pages: result.pages.map(p => ({
+          text: p.text,
+          imageDescription: p.imageDescription,
+          isImageLoading: false,
+        }))
+      });
       recordFeatureUsage(FEATURE_NAMES.STORIES);
-      toast({ title: "Success", description: "Story generated successfully!" });
+      toast({ title: "Success", description: "Story text generated!" });
       playNotificationSound(soundSettings);
     } catch (error) {
-      console.error("Error generating story:", error);
-      toast({ title: "Error", description: "Failed to generate story. " + (error as Error).message, variant: "destructive" });
-      setProgress(0);
+      console.error("Error generating story text:", error);
+      toast({ title: "Error", description: "Failed to generate story text. " + (error as Error).message, variant: "destructive" });
     } finally {
-      setIsLoading(false);
-      setTimeout(() => setProgress(0), 1500);
+      setIsStoryLoading(false);
     }
   };
 
+  const handleGenerateAllImages = async () => {
+    if (!story) return;
+
+    setIsBatchImageLoading(true);
+    setStory(s => s ? { ...s, pages: s.pages.map(p => ({ ...p, isImageLoading: true })) } : null);
+
+    const updatedPages = [...story.pages];
+    for (let i = 0; i < updatedPages.length; i++) {
+        if (!canUseFeature(FEATURE_NAMES.STORIES)) {
+            showUpgradeToast(); break;
+        }
+        try {
+            const input: GenerateStoryImageInput = { imageDescription: updatedPages[i].imageDescription };
+            const result = await generateStoryImage(input);
+            updatedPages[i].imageUrl = result.imageUrl;
+            recordFeatureUsage(FEATURE_NAMES.STORIES);
+        } catch (error) {
+            console.error(`Error generating image for scene ${i + 1}:`, error);
+            toast({ title: `Image ${i+1} Failed`, variant: "destructive" });
+        } finally {
+            updatedPages[i].isImageLoading = false;
+            setStory(s => s ? { ...s, pages: [...updatedPages] } : null);
+        }
+    }
+    toast({ title: "Image Generation Complete" });
+    setIsBatchImageLoading(false);
+  };
+
   const handleDownloadPdf = async () => {
-    if (!generatedStory) return;
+    if (!story) return;
     setIsDownloading(true);
     toast({ title: "Preparing PDF...", description: "This may take a moment." });
 
@@ -91,25 +132,22 @@ export default function StoryGeneratorPage() {
       const maxLineWidth = pageWidth - margin * 2;
       let y = margin;
 
-      // Add Title
       doc.setFontSize(22);
       doc.setFont(undefined, 'bold');
-      const titleLines = doc.splitTextToSize(generatedStory.title, maxLineWidth);
+      const titleLines = doc.splitTextToSize(story.title, maxLineWidth);
       doc.text(titleLines, pageWidth / 2, y, { align: 'center' });
       y += (doc.getTextDimensions(titleLines).h) + 10;
       doc.setFont(undefined, 'normal');
 
-
-      for (const page of generatedStory.pages) {
-         if (y > margin) { // Check if we need a new page before adding content
-            y += 5; // Add some space before the next block
+      for (const page of story.pages) {
+         if (y > margin) {
+            y += 5;
             if (y > pageHeight - margin) {
                 doc.addPage();
                 y = margin;
             }
         }
         
-        // Add Image
         if (page.imageUrl) {
           try {
             const img = new window.Image();
@@ -118,7 +156,7 @@ export default function StoryGeneratorPage() {
             await new Promise((resolve, reject) => {
               img.onload = resolve;
               img.onerror = (err) => reject(new Error(`Image failed to load: ${err}`));
-              img.src = page.imageUrl;
+              img.src = page.imageUrl!;
             });
             
             const imgProps = doc.getImageProperties(img);
@@ -128,15 +166,11 @@ export default function StoryGeneratorPage() {
               doc.addPage();
               y = margin;
             }
-
             doc.addImage(page.imageUrl, 'PNG', margin, y, maxLineWidth, imgHeight);
             y += imgHeight + 10;
           } catch (e) {
             console.error("Could not add image to PDF", e);
-             if (y + 10 > pageHeight - margin) {
-              doc.addPage();
-              y = margin;
-            }
+             if (y + 10 > pageHeight - margin) { doc.addPage(); y = margin; }
             doc.setFontSize(10);
             doc.setTextColor(150);
             doc.text("[Image could not be loaded]", margin, y);
@@ -145,7 +179,6 @@ export default function StoryGeneratorPage() {
           }
         }
         
-        // Add Text
         doc.setFontSize(12);
         const textLines = doc.splitTextToSize(page.text, maxLineWidth);
         const textHeight = doc.getTextDimensions(textLines).h;
@@ -154,14 +187,12 @@ export default function StoryGeneratorPage() {
             doc.addPage();
             y = margin;
         }
-
         doc.text(textLines, margin, y);
         y += textHeight + 5;
       }
       
-      const safeTitle = generatedStory.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const safeTitle = story.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
       doc.save(`${safeTitle || 'ai_story'}.pdf`);
-
     } catch (error) {
       console.error("Failed to generate PDF:", error);
       toast({ title: "PDF Error", description: "Could not generate the PDF. " + (error as Error).message, variant: "destructive" });
@@ -171,10 +202,10 @@ export default function StoryGeneratorPage() {
   };
   
   const handleCopyStory = () => {
-      if (!generatedStory) return;
-      const fullText = generatedStory.title + "\n\n" + generatedStory.pages.map(p => p.text).join("\n\n");
+      if (!story) return;
+      const fullText = story.title + "\n\n" + story.pages.map(p => p.text).join("\n\n");
       navigator.clipboard.writeText(fullText)
-        .then(() => toast({title: "Copied!", description: "The full story text has been copied to your clipboard."}))
+        .then(() => toast({title: "Copied!", description: "The full story text has been copied."}))
         .catch(() => toast({title: "Error", description: "Could not copy the story.", variant: "destructive"}));
   };
 
@@ -183,7 +214,7 @@ export default function StoryGeneratorPage() {
       <Card className="mb-8">
         <CardHeader>
           <CardTitle className="font-headline text-3xl text-primary">AI Story Generator</CardTitle>
-          <CardDescription>Create captivating long-form stories with accompanying AI-generated images for each scene.</CardDescription>
+          <CardDescription>Create stories more reliably. First, generate text. Then, generate images.</CardDescription>
         </CardHeader>
       </Card>
 
@@ -194,20 +225,13 @@ export default function StoryGeneratorPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <Label htmlFor="topic" className="block mb-2 font-medium">Story Topic</Label>
-              <Input 
-                id="topic" 
-                placeholder="e.g., A space adventure, A magical forest" 
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-              />
+              <Label htmlFor="topic">Story Topic</Label>
+              <Input id="topic" placeholder="e.g., A space adventure" value={topic} onChange={(e) => setTopic(e.target.value)} />
             </div>
             <div>
-              <Label htmlFor="length" className="block mb-2 font-medium">Story Length</Label>
+              <Label htmlFor="length">Story Length</Label>
               <Select value={length} onValueChange={(value: "short" | "medium" | "long") => setLength(value)}>
-                <SelectTrigger id="length">
-                  <SelectValue placeholder="Select length" />
-                </SelectTrigger>
+                <SelectTrigger id="length"><SelectValue/></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="short">Short</SelectItem>
                   <SelectItem value="medium">Medium</SelectItem>
@@ -215,10 +239,10 @@ export default function StoryGeneratorPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={handleGenerateStory} disabled={isLoading || !topic} className="w-full">
-              <Sparkles className="mr-2 h-5 w-5" /> {isLoading ? "Generating Story..." : "Generate Story"}
+            <Button onClick={handleGenerateStoryText} disabled={isStoryLoading || !topic} className="w-full">
+              <BookText className="mr-2 h-5 w-5" /> {isStoryLoading ? "Generating Text..." : "1. Generate Story Text"}
             </Button>
-            {isLoading && <Progress value={progress} className="w-full mt-2" />}
+            {isStoryLoading && <p className="text-sm text-center text-muted-foreground">AI is writing...</p>}
           </CardContent>
         </Card>
 
@@ -227,44 +251,52 @@ export default function StoryGeneratorPage() {
             <CardTitle className="font-headline text-xl">Generated Story</CardTitle>
           </CardHeader>
           <CardContent className="min-h-[500px]">
-            {isLoading && !generatedStory && (
+            {isStoryLoading && (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                 <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
                 <p className="text-lg">Generating your epic tale...</p>
-                <p className="text-sm">This might take a few moments, especially for longer stories.</p>
               </div>
             )}
-            {!isLoading && !generatedStory && (
+            {!isStoryLoading && !story && (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                 <BookOpen className="h-16 w-16 mb-4" />
-                <p>Your generated story and images will appear here.</p>
+                <p>Your generated story will appear here.</p>
               </div>
             )}
-            {generatedStory && (
-              <div className="space-y-6">
-                <h2 className="font-headline text-3xl text-center text-accent">{generatedStory.title}</h2>
-                <ScrollArea className="h-[600px] w-full rounded-md border p-4 bg-background">
-                  {generatedStory.pages.map((page, index) => (
+            {story && (
+              <div className="space-y-4">
+                <h2 className="font-headline text-3xl text-center text-accent">{story.title}</h2>
+                <div className="text-center">
+                    <Button onClick={handleGenerateAllImages} disabled={isBatchImageLoading}>
+                      <ImageIcon className="mr-2 h-5 w-5" />
+                      {isBatchImageLoading ? "Generating Images..." : "2. Generate All Images"}
+                    </Button>
+                </div>
+                <ScrollArea className="h-[500px] w-full rounded-md border p-4 bg-background">
+                  {story.pages.map((page, index) => (
                     <div key={index} className="mb-8 p-4 rounded-lg shadow-sm bg-card even:bg-card/80">
-                      {page.imageUrl && (
-                        <div className="relative aspect-video w-full mb-4 rounded overflow-hidden">
-                          <Image src={page.imageUrl} alt={`Illustration for page ${index + 1}`} layout="fill" objectFit="cover" data-ai-hint="story illustration" />
-                        </div>
-                      )}
+                      <div className="relative aspect-video w-full mb-4 rounded overflow-hidden bg-secondary/30 flex items-center justify-center">
+                        {page.imageUrl ? (
+                            <Image src={page.imageUrl} alt={`Illustration for page ${index + 1}`} layout="fill" objectFit="cover" data-ai-hint="story illustration" />
+                        ) : page.isImageLoading ? (
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        ) : (
+                            <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                        )}
+                      </div>
                       <p className="font-body text-lg leading-relaxed whitespace-pre-line">{page.text}</p>
                     </div>
                   ))}
                 </ScrollArea>
-                <div className="flex flex-wrap gap-2 justify-center pt-4 border-t">
+                <CardFooter className="flex flex-wrap gap-2 justify-center pt-4 border-t">
                   <Button onClick={handleCopyStory} variant="outline" disabled={isDownloading}>
-                    <Copy className="mr-2 h-4 w-4" />
-                    Copy Story Text
+                    <Copy className="mr-2 h-4 w-4" /> Copy Story Text
                   </Button>
                   <Button onClick={handleDownloadPdf} disabled={isDownloading}>
                     {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                     {isDownloading ? 'Generating PDF...' : 'Download as PDF'}
                   </Button>
-                </div>
+                </CardFooter>
               </div>
             )}
           </CardContent>

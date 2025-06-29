@@ -1,43 +1,50 @@
 
 'use server';
 /**
- * @fileOverview An AI agent for generating long stories with images.
+ * @fileOverview An AI agent for generating long stories with images in discrete steps.
  *
- * - generateStoryWithImages - A function that generates a story with images.
- * - GenerateStoryWithImagesInput - The input type for the generateStoryWithImages function.
- * - GenerateStoryWithImagesOutput - The return type for the generateStoryWithImages function.
+ * - generateStoryText - A function that generates the story text content (title, pages with text and image descriptions).
+ * - generateStoryImage - A function that generates an image for a single story page.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const GenerateStoryWithImagesInputSchema = z.object({
+// --- SCHEMAS AND TYPES ---
+
+export const GenerateStoryTextInputSchema = z.object({
   topic: z.string().describe('The topic of the story to generate.'),
   length: z.enum(['short', 'medium', 'long']).describe('The desired length of the story.'),
 });
-export type GenerateStoryWithImagesInput = z.infer<typeof GenerateStoryWithImagesInputSchema>;
+export type GenerateStoryTextInput = z.infer<typeof GenerateStoryTextInputSchema>;
 
 const StoryPageSchema = z.object({
-  text: z.string().describe('The text content of the page.'),
+  text: z.string().describe('The text content of the page. This should be a full paragraph.'),
+  imageDescription: z.string().describe('A vivid, one-sentence description of an image to illustrate the text.'),
+});
+export const GenerateStoryTextOutputSchema = z.object({
+  title: z.string().describe('The title of the story.'),
+  pages: z.array(StoryPageSchema).describe('The pages of the story, with text and image descriptions.'),
+});
+export type GenerateStoryTextOutput = z.infer<typeof GenerateStoryTextOutputSchema>;
+
+
+export const GenerateStoryImageInputSchema = z.object({
+  imageDescription: z.string().describe('A vivid description of an image to illustrate the text.'),
+});
+export type GenerateStoryImageInput = z.infer<typeof GenerateStoryImageInputSchema>;
+export const GenerateStoryImageOutputSchema = z.object({
   imageUrl: z.string().describe('The URL of the image for the page, as a data URI.'),
 });
+export type GenerateStoryImageOutput = z.infer<typeof GenerateStoryImageOutputSchema>;
 
-const GenerateStoryWithImagesOutputSchema = z.object({
-  title: z.string().describe('The title of the story.'),
-  pages: z.array(StoryPageSchema).describe('The pages of the story, with text and image URLs.'),
-});
-export type GenerateStoryWithImagesOutput = z.infer<typeof GenerateStoryWithImagesOutputSchema>;
 
-export async function generateStoryWithImages(
-  input: GenerateStoryWithImagesInput
-): Promise<GenerateStoryWithImagesOutput> {
-  return generateStoryWithImagesFlow(input);
-}
+// --- AI PROMPTS ---
 
 const storyOutlinePrompt = ai.definePrompt({
   name: 'storyOutlinePrompt',
   input: {
-    schema: GenerateStoryWithImagesInputSchema,
+    schema: GenerateStoryTextInputSchema,
   },
   output: {
     schema: z.object({
@@ -59,18 +66,13 @@ Generate a creative title and a list of scene descriptions.
   },
 });
 
-const StoryPageTextAndImageDescSchema = z.object({
-  text: z.string().describe('The text content of the page. This should be a full paragraph.'),
-  imageDescription: z.string().describe('A vivid, one-sentence description of an image to illustrate the text.'),
-});
-
 const storyPagePrompt = ai.definePrompt({
   name: 'storyPagePrompt',
   input: { schema: z.object({
     topic: z.string().describe('The topic of the story.'),
     sceneDescription: z.string().describe('A description of the scene.'),
   })},
-  output: { schema: StoryPageTextAndImageDescSchema },
+  output: { schema: StoryPageSchema },
   prompt: `You are a creative story writer and visual artist. Based on the topic and scene description, write the story text and a description of an image to illustrate the text.
 
 Topic: {{{topic}}}
@@ -82,63 +84,58 @@ Write a full paragraph of story text and a concise image description.`,
   },
 });
 
-const generateStoryWithImagesFlow = ai.defineFlow(
-  {
-    name: 'generateStoryWithImagesFlow',
-    inputSchema: GenerateStoryWithImagesInputSchema,
-    outputSchema: GenerateStoryWithImagesOutputSchema,
-  },
-  async input => {
-    // 1. Generate the story outline
-    const outlineResult = await storyOutlinePrompt(input);
-    
-    // If the outline generation fails, return a default empty story to prevent crashing.
-    if (!outlineResult?.output?.sceneDescriptions?.length) {
-      console.error("The AI failed to generate a valid story outline.");
-      return { title: "Story Generation Failed", pages: [] };
-    }
 
-    const {title, sceneDescriptions} = outlineResult.output;
-    const pages = [];
-    
-    // 2. For each scene, generate text and an image within a resilient loop
-    for (const sceneDescription of sceneDescriptions) {
+// --- EXPORTED FUNCTIONS / FLOWS ---
+
+/**
+ * Generates the text content (title, pages with text and image descriptions) for a story.
+ */
+export async function generateStoryText(
+  input: GenerateStoryTextInput
+): Promise<GenerateStoryTextOutput> {
+  const outlineResult = await storyOutlinePrompt(input);
+  if (!outlineResult?.output?.sceneDescriptions?.length) {
+    console.error("The AI failed to generate a valid story outline.");
+    return { title: "Story Generation Failed", pages: [] };
+  }
+  const {title, sceneDescriptions} = outlineResult.output;
+  
+  const pages = await Promise.all(
+    sceneDescriptions.map(async (sceneDescription) => {
       try {
         const pageResult = await storyPagePrompt({
           topic: input.topic,
           sceneDescription,
         });
-
-        // Skip this page if the AI failed to generate text or an image description.
-        if (!pageResult?.output?.text || !pageResult?.output?.imageDescription) {
-          console.warn(`Skipping scene due to missing text or image description: "${sceneDescription}"`);
-          continue; 
-        }
-
-        const {media} = await ai.generate({
-          model: 'googleai/gemini-2.0-flash-preview-image-generation',
-          prompt: `Generate an illustration for a story. The scene is: "${pageResult.output.imageDescription}". The image should be artistic and visually compelling.`,
-          config: {
-            responseModalities: ['TEXT', 'IMAGE'],
-          },
-        });
-
-        // Skip this page if the image generation service failed.
-        if (!media?.url) {
-          console.warn(`Skipping scene due to missing image media for: "${sceneDescription}"`);
-          continue;
-        }
-
-        pages.push({
-          text: pageResult.output.text,
-          imageUrl: media.url,
-        });
+        return pageResult.output!;
       } catch (error) {
-        // Log the error for the specific page and continue with the next one.
         console.error(`Failed to process page for scene: "${sceneDescription}". Skipping. Error:`, error);
+        return {
+            text: `[Error generating content for this scene: ${sceneDescription}]`,
+            imageDescription: "A gray box with an error icon."
+        };
       }
+    })
+  );
+
+  return {title, pages: pages.filter(p => p)};
+}
+
+/**
+ * Generates a single image for a story page based on its description.
+ */
+export async function generateStoryImage(input: GenerateStoryImageInput): Promise<GenerateStoryImageOutput> {
+    const {media} = await ai.generate({
+      model: 'googleai/gemini-2.0-flash-preview-image-generation',
+      prompt: `Generate an illustration for a story. The scene is: "${input.imageDescription}". The image should be artistic and visually compelling.`,
+      config: {
+        responseModalities: ['TEXT', 'IMAGE'],
+      },
+    });
+
+    if (!media?.url) {
+      throw new Error("Image generation failed to return a valid URL.");
     }
 
-    return {title, pages};
-  }
-);
+    return {imageUrl: media.url};
+}
