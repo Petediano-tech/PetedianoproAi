@@ -17,7 +17,6 @@ import Link from 'next/link';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable'; // For better text handling if needed, though we'll do it manually
 
 export default function StoryGeneratorPage() {
   const [topic, setTopic] = useState<string>("");
