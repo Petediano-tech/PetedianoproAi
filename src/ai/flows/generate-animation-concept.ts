@@ -126,7 +126,7 @@ const generateAnimeStoryFlow = ai.defineFlow(
 
       const finalPages: z.infer<typeof StoryPageSchema>[] = [];
 
-      // 2. For each scene, generate text, image, and audio within a try/catch block for resilience.
+      // 2. For each scene, generate text, image, and audio within a resilient loop.
       for (const scene of sceneDescriptions) {
         try {
           const pageTextResult = await storyPageTextPrompt({ sceneDescription: scene, language: input.language });
@@ -134,7 +134,7 @@ const generateAnimeStoryFlow = ai.defineFlow(
 
           if (!text) {
               console.warn(`Skipping scene due to empty text generation: "${scene}"`);
-              continue;
+              continue; // Skip to next scene
           }
 
           const [imageGenerationResult, audioGenerationResult] = await Promise.all([
@@ -166,7 +166,7 @@ const generateAnimeStoryFlow = ai.defineFlow(
           
           if (!imageUrl || !pcmAudioData) {
               console.warn(`Skipping scene due to missing media for: "${scene}"`);
-              continue;
+              continue; // Skip to next scene
           }
           
           const audioBuffer = Buffer.from(
@@ -183,13 +183,14 @@ const generateAnimeStoryFlow = ai.defineFlow(
           });
 
         } catch (error) {
+          // Log the error for the specific page and continue with the next one
           console.error(`Failed to process page for scene: "${scene}". Skipping. Error:`, error);
-          // Continue to the next scene even if one fails
         }
       }
 
+      // 3. Final check to ensure at least some pages were created
       if (finalPages.length === 0) {
-          throw new Error("The AI generated an outline, but failed to create any story pages. Please try again.");
+          throw new Error("The AI generated an outline, but failed to create any story pages. This could be due to content safety filters or other issues. Please try again.");
       }
 
       return {
@@ -197,8 +198,8 @@ const generateAnimeStoryFlow = ai.defineFlow(
         pages: finalPages,
       };
     } catch (err) {
+      // Catch any fatal errors (like the initial outline failing) and report them
       console.error("Fatal error in generateAnimeStoryFlow:", err);
-      // Re-throw a user-friendly error to be displayed on the client
       throw new Error(`An unexpected error occurred while generating the anime story. The AI may have returned an invalid response or a safety filter may have been triggered. Details: ${(err as Error).message}`);
     }
   }

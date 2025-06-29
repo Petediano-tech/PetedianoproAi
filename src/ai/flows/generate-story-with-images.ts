@@ -47,14 +47,13 @@ const storyOutlinePrompt = ai.definePrompt({
         .describe('A list of descriptions for each scene in the story.'),
     }),
   },
-  prompt: `You are a creative story writer. Based on the topic and length provided, create an outline with scene descriptions.
+  prompt: `You are a creative story writer. Based on the topic and length provided, create an outline with a title and a list of scene descriptions.
 
 Topic: {{{topic}}}
 Length: {{{length}}}
 
-Outline:
-Title: ...
-Scene Descriptions: ...`,
+Generate a creative title and a list of scene descriptions.
+`,
   config: {
     temperature: 0.9,
   },
@@ -77,9 +76,7 @@ const storyPagePrompt = ai.definePrompt({
 Topic: {{{topic}}}
 Scene Description: {{{sceneDescription}}}
 
-Page:
-Text: ...
-Image Description: ...`,
+Write a full paragraph of story text and a concise image description.`,
   config: {
     temperature: 0.9,
   },
@@ -93,6 +90,7 @@ const generateStoryWithImagesFlow = ai.defineFlow(
   },
   async input => {
     try {
+      // 1. Generate the story outline
       const outlineResult = await storyOutlinePrompt(input);
       
       if (!outlineResult.output || !outlineResult.output.sceneDescriptions || outlineResult.output.sceneDescriptions.length === 0) {
@@ -102,6 +100,8 @@ const generateStoryWithImagesFlow = ai.defineFlow(
       const {title, sceneDescriptions} = outlineResult.output;
 
       const pages = [];
+      
+      // 2. For each scene, generate text and an image within a resilient loop
       for (const sceneDescription of sceneDescriptions) {
         try {
           const pageResult = await storyPagePrompt({
@@ -111,7 +111,7 @@ const generateStoryWithImagesFlow = ai.defineFlow(
 
           if (!pageResult.output?.text || !pageResult.output?.imageDescription) {
             console.warn(`Skipping scene due to missing text or image description: "${sceneDescription}"`);
-            continue;
+            continue; // Skip to the next scene
           }
 
           const {media} = await ai.generate({
@@ -124,7 +124,7 @@ const generateStoryWithImagesFlow = ai.defineFlow(
 
           if (!media?.url) {
             console.warn(`Skipping scene due to missing image media for: "${sceneDescription}"`);
-            continue;
+            continue; // Skip to the next scene
           }
 
           pages.push({
@@ -132,18 +132,20 @@ const generateStoryWithImagesFlow = ai.defineFlow(
             imageUrl: media.url,
           });
         } catch (error) {
+          // Log the error for the specific page and continue with the next one
           console.error(`Failed to process page for scene: "${sceneDescription}". Skipping. Error:`, error);
         }
       }
 
+      // 3. Final check to ensure at least some pages were created
       if (pages.length === 0) {
-        throw new Error("The AI generated an outline, but failed to create any story pages. Please try again.");
+        throw new Error("The AI generated an outline, but failed to create any story pages. This could be due to content safety filters or other issues. Please try again.");
       }
 
       return {title, pages};
     } catch (err) {
+        // Catch any fatal errors (like the initial outline failing) and report them
         console.error("Fatal error in generateStoryWithImagesFlow:", err);
-        // Re-throw a user-friendly error to be displayed on the client
         throw new Error(`An unexpected error occurred while generating the story. The AI may have returned an invalid response or a safety filter may have been triggered. Details: ${(err as Error).message}`);
     }
   }
