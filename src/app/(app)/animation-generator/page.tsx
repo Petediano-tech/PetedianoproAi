@@ -9,10 +9,19 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Film, Sparkles, Loader2, BookOpen, Download, Music, Image as ImageIcon, Video, BookText } from "lucide-react";
 import Image from "next/image";
 import { 
-  generateAnimationConceptText, type GenerateAnimationConceptTextInput, type GenerateAnimationConceptTextOutput,
-  generateImageForAnimationScene, type GenerateImageForSceneInput,
-  generateAudioForAnimationScene, type GenerateAudioForSceneInput,
+  generateAnimationConceptText,
+  generateImageForAnimationScene,
+  generateAudioForAnimationScene,
 } from '@/ai/flows/generate-animation-concept';
+import {
+  animeStyles,
+  availableVoices,
+  type GenerateAnimationConceptTextInput, 
+  type GenerateAnimationConceptTextOutput,
+  type GenerateImageForSceneInput,
+  type GenerateAudioForSceneInput,
+  type VoiceKey,
+} from '@/ai/flows/animation-concept.types';
 import { toast } from '@/hooks/use-toast';
 import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
 import Link from 'next/link';
@@ -21,14 +30,8 @@ import { playNotificationSound } from '@/utils/audioPlayer';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 
-const animeStyles = ['Vibrant Shonen', 'Elegant Shojo', 'Chibi/Kawaii', 'Classic 90s', 'Dark Fantasy', 'Cyberpunk', 'Studio Ghibli-esque'];
-const availableVoices = {
-  'achernar': 'Achernar', 'algenib': 'Algenib', 'gacrux': 'Gacrux', 'rasalgethi': 'Rasalgethi', 'schedar': 'Schedar', 'sulafat': 'Sulafat', 'zubenelgenubi': 'Zubenelgenubi', 'charon': 'Charon', 'puck': 'Puck',
-  'aoede': 'Aoede', 'leda': 'Leda', 'callirrhoe': 'Callirrhoe', 'autonoe': 'Autonoe', 'erinome': 'Erinome', 'kore': 'Kore'
-} as const;
 const maleVoiceKeys = ['achernar', 'algenib', 'gacrux', 'rasalgethi', 'schedar', 'sulafat', 'zubenelgenubi', 'charon', 'puck'];
 const femaleVoiceKeys = ['aoede', 'leda', 'callirrhoe', 'autonoe', 'erinome', 'kore'];
-type VoiceKey = keyof typeof availableVoices;
 
 interface PageState {
   text: string;
@@ -228,9 +231,9 @@ export default function AnimeStoryGeneratorPage() {
                 <SelectTrigger id="voice"><SelectValue /></SelectTrigger>
                 <SelectContent>
                     <Label className="px-2 text-xs text-muted-foreground">Male Voices</Label>
-                    {maleVoiceKeys.map(key => <SelectItem key={key} value={key}>{availableVoices[key]}</SelectItem>)}
+                    {maleVoiceKeys.map(key => <SelectItem key={key} value={key}>{availableVoices[key as VoiceKey]}</SelectItem>)}
                     <Label className="px-2 text-xs text-muted-foreground">Female Voices</Label>
-                    {femaleVoiceKeys.map(key => <SelectItem key={key} value={key}>{availableVoices[key]}</SelectItem>)}
+                    {femaleVoiceKeys.map(key => <SelectItem key={key} value={key}>{availableVoices[key as VoiceKey]}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
