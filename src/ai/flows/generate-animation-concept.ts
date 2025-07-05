@@ -11,7 +11,6 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import wav from 'wav';
-import {googleAI} from '@genkit-ai/googleai';
 import {
     GenerateAnimationConceptTextInput,
     GenerateAnimationConceptTextInputSchema,
@@ -118,7 +117,7 @@ export async function generateImageForAnimationScene(input: GenerateImageForScen
  */
 export async function generateAudioForAnimationScene(input: GenerateAudioForSceneInput): Promise<GenerateAudioForSceneOutput> {
     const { media } = await ai.generate({
-      model: googleAI.model('gemini-2.5-flash-preview-tts'),
+      model: 'googleai/gemini-2.5-flash-preview-tts',
       prompt: input.text,
       config: {
         responseModalities: ['AUDIO'],
