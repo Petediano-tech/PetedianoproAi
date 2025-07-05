@@ -2,7 +2,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Sparkles, Edit3, Bot, FileText, ImageIcon, LogOut, Film } from "lucide-react";
+import { ArrowRight, Sparkles, Edit3, Bot, FileText, ImageIcon, LogOut } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Logo } from "@/components/icons/Logo";
@@ -38,13 +38,6 @@ const features = [
     description: "Generate stunning visuals, logos, and social media posts from text.",
     link: "/picture-generator",
     actionText: "Generate Images"
-  },
-    {
-    icon: <Film className="h-8 w-8 text-primary" />,
-    title: "AI Anime Story Generator",
-    description: "Create anime-style stories, complete with beautifully generated images.",
-    link: "/animation-generator",
-    actionText: "Generate a Story"
   },
   {
     icon: <Bot className="h-8 w-8 text-primary" />,
