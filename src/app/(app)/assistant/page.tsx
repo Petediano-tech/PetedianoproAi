@@ -12,6 +12,7 @@ import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useSoundSettings } from '@/hooks/useSoundSettings'; 
 import { playNotificationSound } from '@/utils/audioPlayer'; 
+import { playTypingVibration } from '@/utils/haptics';
 
 interface Message {
   id: string;
@@ -90,6 +91,7 @@ export default function AssistantPage() {
   };
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    playTypingVibration(soundSettings);
     if (e.key === 'Enter' && !e.shiftKey && !isLoading) {
       e.preventDefault();
       handleSendMessage();
