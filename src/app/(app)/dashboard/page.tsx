@@ -5,7 +5,8 @@ import Link from "next/link";
 import { 
     ArrowRight, Edit3, Sparkles, ImageIcon, FileText, Bot, 
     Settings, DollarSign, Video, Newspaper, Presentation, Share2 as ShareIcon, 
-    Users, Lightbulb, Gamepad2, UtensilsCrossed, Captions, Briefcase, Map, Code
+    Users, Lightbulb, Gamepad2, UtensilsCrossed, Captions, Briefcase, Map, Code,
+    Music, Film, MessageCircle, GalleryHorizontal
 } from "lucide-react";
 
 const mainFeatures = [
@@ -17,8 +18,11 @@ const mainFeatures = [
 
 const contentGenerationFeatures = [
   { title: "Quotes Generator", description: "Create motivational quotes.", icon: Sparkles, href: "/content-generator/quotes" },
-  { title: "Stories Generator", description: "Develop long-form stories.", icon: FileText, href: "/content-generator/stories" },
+  { title: "Story Generator", description: "Develop long-form stories.", icon: FileText, href: "/content-generator/stories" },
+  { title: "Interactive Story", description: "Create branching narratives.", icon: MessageCircle, href: "/interactive-story" },
   { title: "Video Script Generator", description: "Draft scripts for videos.", icon: Video, href: "/content-generator/video-scripts" },
+  { title: "Video Slideshow Creator", description: "Turn scripts into videos.", icon: Film, href: "/video-slideshow" },
+  { title: "Music & Sound Generator", description: "Create audio from text.", icon: Music, href: "/music-generator" },
   { title: "Blog Post Writer", description: "Generate article drafts.", icon: Newspaper, href: "/content-generator/blog-posts" },
   { title: "Presentation Generator", description: "Outline slide presentations.", icon: Presentation, href: "/content-generator/presentations" },
   { title: "Social Media Planner", description: "Plan social media campaigns.", icon: ShareIcon, href: "/content-generator/social-media-plans" },
@@ -33,6 +37,11 @@ const specializedAIFeatures = [
     { title: "Trip Planner", description: "Generate travel itineraries.", icon: Map, href: "/specialized-ai/trip-planner"},
     { title: "Code Explainer", description: "Understand code snippets.", icon: Code, href: "/specialized-ai/code-explainer"},
 ];
+
+const communityAndFunFeatures = [
+  { title: "Community Gallery", description: "See creations from others.", icon: GalleryHorizontal, href: "/community-gallery" },
+  { title: "Game Center", description: "Play a fun game of Tic-Tac-Toe.", icon: Gamepad2, href: "/game" },
+]
 
 
 export default function DashboardPage() {
@@ -50,7 +59,7 @@ export default function DashboardPage() {
       <Section title="Core Tools" features={mainFeatures} />
       <Section title="Content Generation Suite" features={contentGenerationFeatures} />
       <Section title="Specialized & Developer AI Tools" features={specializedAIFeatures} />
-      <Section title="Games & Fun" features={[{ title: "Game Center", description: "Play a fun game of Tic-Tac-Toe.", icon: Gamepad2, href: "/game" }]} />
+      <Section title="Community & Fun" features={communityAndFunFeatures} />
 
       <div className="grid gap-6 md:grid-cols-2">
          <Card className="hover:shadow-lg transition-shadow">
@@ -107,7 +116,7 @@ function Section({ title, features }: SectionProps) {
   return (
     <div>
       <h2 className="font-headline text-2xl md:text-3xl font-semibold text-primary mb-6">{title}</h2>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {features.map((feature) => (
           <Card key={feature.title} className="flex flex-col hover:shadow-lg transition-shadow">
             <CardHeader>

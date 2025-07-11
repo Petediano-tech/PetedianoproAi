@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -12,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Settings, User, LogOut, DollarSign } from 'lucide-react';
+import { Settings, User, LogOut, DollarSign, GalleryHorizontal } from 'lucide-react';
 
 // Dummy user data - replace with actual auth state
 const user = {
@@ -70,6 +71,12 @@ export function UserNav() {
             <DropdownMenuItem>
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
+            </DropdownMenuItem>
+          </Link>
+          <Link href="/community-gallery" passHref>
+            <DropdownMenuItem>
+              <GalleryHorizontal className="mr-2 h-4 w-4" />
+              <span>Community Gallery</span>
             </DropdownMenuItem>
           </Link>
           <Link href="/vip" passHref>

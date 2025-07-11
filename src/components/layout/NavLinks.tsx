@@ -26,6 +26,10 @@ import {
   Briefcase,
   Map,
   Code,
+  Music,
+  Film,
+  MessageCircle,
+  GalleryHorizontal
 } from 'lucide-react';
 import { SidebarMenuButton } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
@@ -39,7 +43,10 @@ const navItems = [
     subItems: [
       { href: '/content-generator/quotes', label: 'Quotes', icon: Sparkles },
       { href: '/content-generator/stories', label: 'Stories', icon: FileText },
+      { href: '/interactive-story', label: 'Interactive Story', icon: MessageCircle },
       { href: '/content-generator/video-scripts', label: 'Video Scripts', icon: Video },
+      { href: '/video-slideshow', label: 'Video Slideshows', icon: Film },
+      { href: '/music-generator', label: 'Music & Sounds', icon: Music },
       { href: '/content-generator/blog-posts', label: 'Blog Posts', icon: Newspaper },
       { href: '/content-generator/presentations', label: 'Presentations', icon: Presentation },
       { href: '/content-generator/social-media-plans', label: 'Social Media Plans', icon: ShareIcon },
@@ -63,6 +70,7 @@ const navItems = [
   },
   { href: '/game', label: 'Game Center', icon: Gamepad2 },
   { type: 'separator' },
+  { href: '/community-gallery', label: 'Community Gallery', icon: GalleryHorizontal },
   { href: '/vip', label: 'VIP Membership', icon: DollarSign },
   { type: 'separator' },
   { href: '/contact', label: 'Contact Us', icon: Phone },

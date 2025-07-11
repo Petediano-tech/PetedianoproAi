@@ -19,3 +19,6 @@ import '@/ai/flows/generate-recipe.ts';
 import '@/ai/flows/generate-trip-plan.ts';
 import '@/ai/flows/generate-image-caption.ts';
 import '@/ai/flows/explain-code.ts';
+import '@/ai/flows/generate-music.ts';
+import '@/ai/flows/generate-video-slideshow.ts';
+import '@/ai/flows/generate-interactive-story.ts';
