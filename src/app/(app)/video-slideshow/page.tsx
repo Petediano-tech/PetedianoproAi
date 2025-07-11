@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Film, Sparkles, Loader2, Play, Pause, Fullscreen, Download, FileText, Image as ImageIcon } from "lucide-react";
-import { generateVideoSlideshow, type GenerateVideoSlideshowInput, type GenerateVideoSlideshowOutput } from '@/ai/flows/generate-video-slideshow';
+import { generateVideoSlideshow } from '@/ai/flows/generate-video-slideshow';
+import { type GenerateVideoSlideshowInput } from '@/ai/flows/video-slideshow.types';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { canUseFeature, recordFeatureUsage } from '@/lib/usage-limiter';
