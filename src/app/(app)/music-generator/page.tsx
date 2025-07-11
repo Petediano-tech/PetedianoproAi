@@ -1,12 +1,13 @@
 
 "use client";
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Music, Sparkles, Loader2, Download, Copy, Play, Pause } from "lucide-react";
-import { generateMusic, type GenerateMusicInput, type GenerateMusicOutput } from '@/ai/flows/generate-music';
+import { generateMusic } from '@/ai/flows/generate-music';
+import type { GenerateMusicInput, GenerateMusicOutput } from '@/ai/flows/music.types';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { canUseFeature, recordFeatureUsage } from '@/lib/usage-limiter';
@@ -23,7 +24,7 @@ export default function MusicGeneratorPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [progressValue, setProgressValue] = useState(0);
   const { soundSettings } = useSoundSettings();
-  const audioRef = useState(new Audio())[0];
+  const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
   const showUpgradeToast = () => {
@@ -48,8 +49,9 @@ export default function MusicGeneratorPage() {
     setIsLoading(true);
     setProgressValue(10);
     setGeneratedAudio(null);
-    if(isPlaying) {
-      audioRef.pause();
+    
+    if (audioRef.current && isPlaying) {
+      audioRef.current.pause();
       setIsPlaying(false);
     }
     
@@ -65,9 +67,9 @@ export default function MusicGeneratorPage() {
       toast({ title: "Success", description: "Audio generated successfully!" });
       playNotificationSound(soundSettings);
       
-      // Preload the new audio
-      audioRef.src = result.audioDataUri;
-      audioRef.onended = () => setIsPlaying(false);
+      if (audioRef.current) {
+        audioRef.current.onended = () => setIsPlaying(false);
+      }
 
     } catch (error) {
       console.error("Error generating music:", error);
@@ -81,11 +83,11 @@ export default function MusicGeneratorPage() {
   };
 
   const togglePlayback = () => {
-    if (!generatedAudio) return;
+    if (!generatedAudio || !audioRef.current) return;
     if (isPlaying) {
-      audioRef.pause();
+      audioRef.current.pause();
     } else {
-      audioRef.play();
+      audioRef.current.play();
     }
     setIsPlaying(!isPlaying);
   };
@@ -144,7 +146,7 @@ export default function MusicGeneratorPage() {
             )}
             {generatedAudio && (
               <div className="w-full flex flex-col items-center gap-6">
-                <audio ref={audioRef} src={generatedAudio} className="w-full" controls />
+                <audio ref={audioRef} src={generatedAudio} className="w-full" controls onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} />
                 <div className="flex gap-4">
                      <Button variant="outline" asChild>
                         <a href={generatedAudio} download="petediano_pro_audio.wav">
