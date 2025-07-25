@@ -14,7 +14,7 @@ interface UsageData {
 }
 
 interface VipInfo {
-  passkey: string;
+  passkey?: string;
   type: 'monthly' | 'quarterly' | 'yearly' | 'lifetime';
   activationDate: string;
   expiryDate: string | null;
@@ -48,6 +48,38 @@ function saveUsageData(data: UsageData): void {
     console.error("Error saving usage data to localStorage:", error);
   }
 }
+
+function calculateExpiry(type: VipInfo['type'], activationDate: Date): Date | null {
+  const expiry = new Date(activationDate);
+  switch (type) {
+    case 'monthly':
+      expiry.setMonth(expiry.getMonth() + 1);
+      return expiry;
+    case 'quarterly':
+      expiry.setMonth(expiry.getMonth() + 3);
+      return expiry;
+    case 'yearly':
+      expiry.setFullYear(expiry.getFullYear() + 1);
+      return expiry;
+    case 'lifetime':
+      return null;
+    default:
+      return null;
+  }
+}
+
+export function setVipStatus(type: VipInfo['type']): void {
+  if (typeof window === 'undefined') return;
+  const activationDate = new Date();
+  const expiryDate = calculateExpiry(type, activationDate);
+  const vipInfo: VipInfo = {
+    type,
+    activationDate: activationDate.toISOString(),
+    expiryDate: expiryDate ? expiryDate.toISOString() : null,
+  };
+  localStorage.setItem(VIP_INFO_KEY, JSON.stringify(vipInfo));
+}
+
 
 export function isUserVip(): boolean {
   if (typeof window === 'undefined') return false;

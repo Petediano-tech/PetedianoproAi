@@ -7,9 +7,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DollarSign, CheckCircle, Crown, KeyRound, Loader2, AlertTriangle, CreditCard, Copy } from "lucide-react";
-import Image from 'next/image';
 import { toast } from '@/hooks/use-toast';
-import { isUserVip } from '@/lib/usage-limiter';
+import { isUserVip, setVipStatus } from '@/lib/usage-limiter';
 import { validateAndUsePasskey } from '@/lib/passkeys';
 import { cn } from '@/lib/utils';
 import {
@@ -23,6 +22,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import Confetti from 'react-confetti';
+import { useWindowSize } from '@/hooks/useWindowSize';
+
 
 // Conceptual SVGs for payment logos
 const AirtelMoneyLogo = () => <div className="h-8 w-8 bg-red-500 text-white flex items-center justify-center rounded-full text-xs font-bold">AM</div>;
@@ -32,10 +34,10 @@ const PayPalLogo = () => <svg className="h-6 w-6" role="img" viewBox="0 0 24 24"
 const USD_TO_MWK_RATE = 1800;
 
 const vipPlans = [
-  { id: 'monthly', name: "Monthly", priceUSD: 0.50, duration: "per month", features: ["Unlimited Generations", "Priority Support", "Early Access"], demoPasskey: "DEMO-MONTHLY-KEY" },
-  { id: 'quarterly', name: "Quarterly", priceUSD: 1.00, duration: "for 3 months", features: ["All Monthly Benefits", "10% Discount"], popular: true, demoPasskey: "DEMO-QUARTERLY-KEY" },
-  { id: 'yearly', name: "Yearly", priceUSD: 2.00, duration: "per year", features: ["All Yearly Benefits", "20% Discount", "Exclusive Content"], demoPasskey: "DEMO-YEARLY-KEY" },
-  { id: 'lifetime', name: "Lifetime", priceUSD: 5.00, duration: "one-time", features: ["All Yearly Benefits", "Never Pay Again"], bestValue: true, demoPasskey: "DEMO-LIFETIME-KEY" },
+  { id: 'monthly', name: "Monthly", priceUSD: 0.50, duration: "per month", features: ["Unlimited Generations", "Priority Support", "Early Access"], type: 'monthly' as const },
+  { id: 'quarterly', name: "Quarterly", priceUSD: 1.00, duration: "for 3 months", features: ["All Monthly Benefits", "10% Discount"], popular: true, type: 'quarterly' as const },
+  { id: 'yearly', name: "Yearly", priceUSD: 2.00, duration: "per year", features: ["All Yearly Benefits", "20% Discount", "Exclusive Content"], type: 'yearly' as const },
+  { id: 'lifetime', name: "Lifetime", priceUSD: 5.00, duration: "one-time", features: ["All Yearly Benefits", "Never Pay Again"], bestValue: true, type: 'lifetime' as const },
 ];
 type Plan = typeof vipPlans[0];
 
@@ -47,12 +49,15 @@ interface AttemptData { count: number; lockoutLevel: number; lockedUntil: number
 export default function VipPage() {
   const [passkey, setPasskey] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [currentIsVip, setCurrentIsVip] = useState(false);
   const [attemptData, setAttemptData] = useState<AttemptData>({ count: 0, lockoutLevel: 0, lockedUntil: 0 });
   const [_, setTimer] = useState(0); 
 
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const paymentSectionRef = useRef<HTMLDivElement>(null);
+  const { width, height } = useWindowSize();
+  const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     setCurrentIsVip(isUserVip());
@@ -98,6 +103,7 @@ export default function VipPage() {
 
       if (result.success) {
         toast({ title: "🎉 Congratulations! 🎉", description: result.message, duration: 7000 });
+        setShowConfetti(true);
         setCurrentIsVip(true);
         setPasskey('');
         localStorage.removeItem(ATTEMPTS_STORAGE_KEY);
@@ -123,14 +129,20 @@ export default function VipPage() {
     }, 500);
   };
 
-  const handleSimulatedPayment = () => {
+  const handleOnlinePayment = () => {
     if (!selectedPlan) return;
-    toast({
-      title: 'Payment "Successful"!',
-      description: `Your demo passkey is: ${selectedPlan.demoPasskey}. Please copy and paste it below to activate.`,
-      duration: 10000,
-    });
-    navigator.clipboard.writeText(selectedPlan.demoPasskey);
+    setIsProcessingPayment(true);
+    setTimeout(() => {
+      setVipStatus(selectedPlan.type);
+      toast({
+        title: '🎉 Purchase Successful! 🎉',
+        description: `Your ${selectedPlan.name} VIP plan is now active. Enjoy unlimited access!`,
+        duration: 10000,
+      });
+      setShowConfetti(true);
+      setCurrentIsVip(true);
+      setIsProcessingPayment(false);
+    }, 2500);
   };
   
   const formatPriceMWK = (priceUSD: number) => {
@@ -140,6 +152,7 @@ export default function VipPage() {
   if (currentIsVip) {
     return (
         <div className="container mx-auto py-8 text-center">
+            {width && height && showConfetti && <Confetti width={width} height={height} recycle={false} onConfettiComplete={() => setShowConfetti(false)} />}
             <Card className="max-w-md mx-auto">
                 <CardHeader>
                     <CardTitle className="font-headline text-3xl text-primary flex items-center justify-center">
@@ -149,7 +162,7 @@ export default function VipPage() {
                 <CardContent className="space-y-4">
                     <p className="text-lg">Thank you for being a valued Petediano Pro VIP member.</p>
                     <p className="text-muted-foreground">You have unlimited access to all features.</p>
-                    <CheckCircle className="h-24 w-24 text-green-500 mx-auto animate-pulse" />
+                    <CheckCircle className="h-24 w-24 text-green-500 mx-auto" />
                 </CardContent>
             </Card>
         </div>
@@ -199,43 +212,49 @@ export default function VipPage() {
       <div ref={paymentSectionRef} className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <Card>
           <CardHeader>
-              <CardTitle className="font-headline text-xl">Online Payment (Simulated)</CardTitle>
+              <CardTitle className="font-headline text-xl">Online Payment</CardTitle>
               <CardDescription>
-                Select a plan above, then use a simulated payment method. You will receive a demo passkey to activate.
+                Select a plan above, then use an online payment method. Your plan will be activated instantly.
               </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                    <Button className="w-full" disabled={!selectedPlan}><CreditCard className="mr-2"/>Pay with Card</Button>
+                    <Button className="w-full" disabled={!selectedPlan || isProcessingPayment}><CreditCard className="mr-2"/>Pay with Card</Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                    <AlertDialogTitle>Confirm Payment for {selectedPlan?.name} Plan</AlertDialogTitle>
+                    <AlertDialogTitle>Confirm Purchase: {selectedPlan?.name} Plan</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This is a simulation. No real payment will be processed. Click below to simulate a successful transaction and receive your demo passkey.
+                       You are about to purchase the {selectedPlan?.name} plan for ${selectedPlan?.priceUSD.toFixed(2)}.
                     </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleSimulatedPayment}>Simulate Payment</AlertDialogAction>
+                    <AlertDialogAction onClick={handleOnlinePayment} disabled={isProcessingPayment}>
+                        {isProcessingPayment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {isProcessingPayment ? 'Processing...' : 'Confirm Purchase'}
+                    </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
               <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="outline" className="w-full" disabled={!selectedPlan}><PayPalLogo />Pay with PayPal</Button>
+                    <Button variant="outline" className="w-full" disabled={!selectedPlan || isProcessingPayment}><PayPalLogo />Pay with PayPal</Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Confirm PayPal Payment for {selectedPlan?.name} Plan</AlertDialogTitle>
+                      <AlertDialogTitle>Confirm Purchase: {selectedPlan?.name} Plan</AlertDialogTitle>
                       <AlertDialogDescription>
-                          This is a simulation. No real payment will be processed. Clicking below will simulate a successful PayPal transaction and give you a demo passkey.
+                          You will be redirected to PayPal to complete your purchase of the {selectedPlan?.name} plan for ${selectedPlan?.priceUSD.toFixed(2)}.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleSimulatedPayment}>Simulate Payment</AlertDialogAction>
+                      <AlertDialogAction onClick={handleOnlinePayment} disabled={isProcessingPayment}>
+                        {isProcessingPayment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {isProcessingPayment ? 'Processing...' : 'Confirm Purchase'}
+                      </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
               </AlertDialog>
@@ -270,7 +289,7 @@ export default function VipPage() {
       <Card>
         <CardHeader>
           <CardTitle className="font-headline text-xl flex items-center"><KeyRound className="mr-2 h-5 w-5 text-primary"/>Activate Your VIP Access</CardTitle>
-          <CardDescription>If you have received a VIP passkey, enter it here for activation.</CardDescription>
+          <CardDescription>If you have received a VIP passkey via manual payment, enter it here for activation.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
           <div className="flex gap-2">
