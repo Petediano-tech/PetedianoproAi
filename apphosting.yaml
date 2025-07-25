@@ -4,7 +4,7 @@
 runConfig:
   # With public set to true, your preview URL will be available to
   # anyone on the internet.
-  public: true
+  public: false
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
