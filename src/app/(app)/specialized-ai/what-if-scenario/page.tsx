@@ -44,7 +44,7 @@ export default function WhatIfScenarioGeneratorPage() {
       return;
     }
 
-    if (!canUseFeature(FEATURE_NAMES.WHAT_IF_SCENARIO_GENERATOR)) {
+    if (!await canUseFeature(FEATURE_NAMES.WHAT_IF_SCENARIO_GENERATOR)) {
       showUpgradeToast();
       return;
     }
@@ -61,7 +61,7 @@ export default function WhatIfScenarioGeneratorPage() {
       const input: GenerateWhatIfScenarioInput = { baseSituation, pointOfDivergence, numberOfVariations, customInstructions };
       const result = await generateWhatIfScenario(input);
       setGeneratedOutput(result);
-      recordFeatureUsage(FEATURE_NAMES.WHAT_IF_SCENARIO_GENERATOR);
+      await recordFeatureUsage(FEATURE_NAMES.WHAT_IF_SCENARIO_GENERATOR);
       toast({ title: "Success", description: "Scenarios generated!" });
       playNotificationSound(soundSettings);
     } catch (error) {
@@ -224,4 +224,3 @@ export default function WhatIfScenarioGeneratorPage() {
     </div>
   );
 }
-

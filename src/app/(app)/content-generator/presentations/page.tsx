@@ -48,7 +48,7 @@ export default function PresentationGeneratorPage() {
       return;
     }
 
-    if (!canUseFeature(FEATURE_NAMES.PRESENTATION_GENERATOR)) {
+    if (!await canUseFeature(FEATURE_NAMES.PRESENTATION_GENERATOR)) {
       showUpgradeToast();
       return;
     }
@@ -72,7 +72,7 @@ export default function PresentationGeneratorPage() {
       };
       const result = await generatePresentationOutline(input);
       setGeneratedOutline(result);
-      recordFeatureUsage(FEATURE_NAMES.PRESENTATION_GENERATOR);
+      await recordFeatureUsage(FEATURE_NAMES.PRESENTATION_GENERATOR);
       toast({ title: "Success", description: "Presentation outline generated successfully!" });
       playNotificationSound(soundSettings);
     } catch (error) {
@@ -250,5 +250,3 @@ export default function PresentationGeneratorPage() {
     </div>
   );
 }
-
-    

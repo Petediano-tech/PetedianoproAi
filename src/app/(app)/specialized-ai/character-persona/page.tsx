@@ -44,7 +44,7 @@ export default function CharacterPersonaGeneratorPage() {
       return;
     }
 
-    if (!canUseFeature(FEATURE_NAMES.CHARACTER_PERSONA_GENERATOR)) {
+    if (!await canUseFeature(FEATURE_NAMES.CHARACTER_PERSONA_GENERATOR)) {
       showUpgradeToast();
       return;
     }
@@ -61,7 +61,7 @@ export default function CharacterPersonaGeneratorPage() {
       const input: GenerateCharacterPersonaInput = { archetype, keyTraits, setting, customPrompt };
       const result = await generateCharacterPersona(input);
       setGeneratedPersona(result);
-      recordFeatureUsage(FEATURE_NAMES.CHARACTER_PERSONA_GENERATOR);
+      await recordFeatureUsage(FEATURE_NAMES.CHARACTER_PERSONA_GENERATOR);
       toast({ title: "Success", description: "Character persona generated!" });
       playNotificationSound(soundSettings);
     } catch (error) {

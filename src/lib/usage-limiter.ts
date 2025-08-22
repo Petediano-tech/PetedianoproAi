@@ -1,23 +1,14 @@
 
 "use client";
 
-const USAGE_STORAGE_KEY = 'petedianoProUsage';
-const VIP_INFO_KEY = 'petedianoProVipInfo'; // Use the same key as passkeys.ts
+import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
+import { db, auth } from './firebase';
+
 const DAILY_LIMIT_PER_FEATURE = 5;
 
-interface DailyUsage {
-  [featureName: string]: number;
-}
-
-interface UsageData {
-  [date: string]: DailyUsage;
-}
-
 interface VipInfo {
-  passkey?: string;
-  type: 'monthly' | 'quarterly' | 'yearly' | 'lifetime';
-  activationDate: string;
-  expiryDate: string | null;
+  vipStatus: 'free' | 'monthly' | 'quarterly' | 'yearly' | 'lifetime';
+  vipExpiry: string | null;
 }
 
 function getTodayDateString(): string {
@@ -28,121 +19,121 @@ function getTodayDateString(): string {
   return `${year}-${month}-${day}`;
 }
 
-function getUsageData(): UsageData {
-  if (typeof window === 'undefined') return {};
+async function getUserVipInfo(): Promise<VipInfo | null> {
+  const user = auth.currentUser;
+  if (!user) return null;
+
+  const userDocRef = doc(db, 'users', user.uid);
   try {
-    const rawData = localStorage.getItem(USAGE_STORAGE_KEY);
-    return rawData ? JSON.parse(rawData) : {};
+    const userDoc = await getDoc(userDocRef);
+    if (userDoc.exists()) {
+      const data = userDoc.data();
+      return {
+        vipStatus: data.vipStatus || 'free',
+        vipExpiry: data.vipExpiry || null,
+      };
+    }
+    return null;
   } catch (error) {
-    console.error("Error reading usage data from localStorage:", error);
-    return {};
+    console.error("Error fetching user VIP info:", error);
+    return null;
   }
 }
 
-function saveUsageData(data: UsageData): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(USAGE_STORAGE_KEY, JSON.stringify(data));
-  } catch (error)
-    {
-    console.error("Error saving usage data to localStorage:", error);
-  }
-}
-
-function calculateExpiry(type: VipInfo['type'], activationDate: Date): Date | null {
-  const expiry = new Date(activationDate);
-  switch (type) {
-    case 'monthly':
-      expiry.setMonth(expiry.getMonth() + 1);
-      return expiry;
-    case 'quarterly':
-      expiry.setMonth(expiry.getMonth() + 3);
-      return expiry;
-    case 'yearly':
-      expiry.setFullYear(expiry.getFullYear() + 1);
-      return expiry;
-    case 'lifetime':
-      return null;
-    default:
-      return null;
-  }
-}
-
-export function setVipStatus(type: VipInfo['type']): void {
-  if (typeof window === 'undefined') return;
-  const activationDate = new Date();
-  const expiryDate = calculateExpiry(type, activationDate);
-  const vipInfo: VipInfo = {
-    type,
-    activationDate: activationDate.toISOString(),
-    expiryDate: expiryDate ? expiryDate.toISOString() : null,
-  };
-  localStorage.setItem(VIP_INFO_KEY, JSON.stringify(vipInfo));
+export function setVipStatus(type: VipInfo['vipStatus']): void {
+    // This function is now mostly conceptual as passkey activation handles the update.
+    // However, it can be used for direct "purchases" if that flow is implemented.
+    if (typeof window === 'undefined') return;
+    const user = auth.currentUser;
+    if (!user) return;
+    
+    const activationDate = new Date();
+    const expiryDate = calculateExpiry(type, activationDate);
+    
+    const userDocRef = doc(db, 'users', user.uid);
+    updateDoc(userDocRef, {
+        vipStatus: type,
+        vipActivationDate: activationDate.toISOString(),
+        vipExpiry: expiryDate ? expiryDate.toISOString() : null,
+    }).catch(error => console.error("Failed to set VIP status:", error));
 }
 
 
-export function isUserVip(): boolean {
-  if (typeof window === 'undefined') return false;
-  try {
-    const vipInfoRaw = localStorage.getItem(VIP_INFO_KEY);
-    if (!vipInfoRaw) {
+export async function isUserVip(): Promise<boolean> {
+  const vipInfo = await getUserVipInfo();
+  if (!vipInfo) return false;
+
+  if (vipInfo.vipStatus === 'lifetime') return true;
+  if (vipInfo.vipStatus === 'free') return false;
+
+  if (vipInfo.vipExpiry) {
+    const expiry = new Date(vipInfo.vipExpiry);
+    if (expiry > new Date()) {
+      return true; // Still valid
+    } else {
+      // Membership has expired, reset status in Firestore
+      const user = auth.currentUser;
+      if (user) {
+        const userDocRef = doc(db, 'users', user.uid);
+        await updateDoc(userDocRef, {
+          vipStatus: 'free',
+          vipExpiry: null,
+          vipActivationDate: null,
+        }).catch(err => console.error("Failed to reset expired VIP status:", err));
+      }
       return false;
     }
-    
-    const vipInfo: VipInfo = JSON.parse(vipInfoRaw);
-
-    if (vipInfo.type === 'lifetime') {
-      return true;
-    }
-
-    if (vipInfo.expiryDate) {
-      const expiry = new Date(vipInfo.expiryDate);
-      if (expiry > new Date()) {
-        return true; // Still valid
-      } else {
-        // Membership has expired, clear the info
-        localStorage.removeItem(VIP_INFO_KEY);
-        return false;
-      }
-    }
-    
-    return false; // Should not happen if data is well-formed
-  } catch (error) {
-    console.error("Error reading VIP status from localStorage:", error);
-    // In case of parsing error, clear potentially corrupted data
-    localStorage.removeItem(VIP_INFO_KEY);
-    return false;
   }
+  return false;
 }
 
-export function canUseFeature(featureName: string): boolean {
-  if (typeof window === 'undefined') return true; // Allow SSR or if localStorage fails
-  if (isUserVip()) {
+export async function canUseFeature(featureName: string): Promise<boolean> {
+  if (await isUserVip()) {
     return true;
   }
+  
+  const user = auth.currentUser;
+  if (!user) return false; // Or handle as a guest user with limits
 
   const today = getTodayDateString();
-  const usageData = getUsageData();
+  const usageDocRef = doc(db, 'usage', user.uid, 'daily', today);
   
-  const todayUsage = usageData[today]?.[featureName] || 0;
-  return todayUsage < DAILY_LIMIT_PER_FEATURE;
+  try {
+    const usageDoc = await getDoc(usageDocRef);
+    if (usageDoc.exists()) {
+      const todayUsage = usageDoc.data()[featureName] || 0;
+      return todayUsage < DAILY_LIMIT_PER_FEATURE;
+    }
+    return true; // No record for today means they haven't used it yet
+  } catch (error) {
+    console.error("Error checking feature usage:", error);
+    return false; // Fail safely
+  }
 }
 
-export function recordFeatureUsage(featureName: string): void {
-  if (typeof window === 'undefined') return;
-  if (isUserVip()) {
+export async function recordFeatureUsage(featureName: string): Promise<void> {
+  if (await isUserVip()) {
     return; // VIP users don't have usage tracked against limits
   }
 
-  const today = getTodayDateString();
-  const usageData = getUsageData();
-
-  if (!usageData[today]) {
-    usageData[today] = {};
-  }
+  const user = auth.currentUser;
+  if (!user) return;
   
-  usageData[today][featureName] = (usageData[today][featureName] || 0) + 1;
-  saveUsageData(usageData);
+  const today = getTodayDateString();
+  const usageDocRef = doc(db, 'usage', user.uid, 'daily', today);
+
+  try {
+    await updateDoc(usageDocRef, {
+        [featureName]: increment(1)
+    });
+  } catch (error) {
+    // If the document doesn't exist, 'updateDoc' fails. We need to 'set' it instead.
+    if ((error as any).code === 'not-found') {
+        await setDoc(usageDocRef, { [featureName]: 1 }, { merge: true });
+    } else {
+        console.error("Error recording feature usage:", error);
+    }
+  }
 }
 
 export const FEATURE_NAMES = {
@@ -166,3 +157,23 @@ export const FEATURE_NAMES = {
   VIDEO_SLIDESHOW_CREATOR: 'VIDEO_SLIDESHOW_CREATOR',
   INTERACTIVE_STORY_GENERATOR: 'INTERACTIVE_STORY_GENERATOR',
 };
+
+function calculateExpiry(type: VipInfo['vipStatus'], activationDate: Date): Date | null {
+  const expiry = new Date(activationDate);
+  switch (type) {
+    case 'monthly':
+      expiry.setMonth(expiry.getMonth() + 1);
+      return expiry;
+    case 'quarterly':
+      expiry.setMonth(expiry.getMonth() + 3);
+      return expiry;
+    case 'yearly':
+      expiry.setFullYear(expiry.getFullYear() + 1);
+      return expiry;
+    case 'lifetime':
+    case 'free':
+      return null;
+    default:
+      return null;
+  }
+}

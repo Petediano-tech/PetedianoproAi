@@ -53,7 +53,7 @@ export default function BlogPostWriterPage() {
       return;
     }
 
-    if (!canUseFeature(FEATURE_NAMES.BLOG_POST_WRITER)) {
+    if (!await canUseFeature(FEATURE_NAMES.BLOG_POST_WRITER)) {
       showUpgradeToast();
       return;
     }
@@ -77,7 +77,7 @@ export default function BlogPostWriterPage() {
       };
       const result = await generateBlogPost(input);
       setGeneratedPost(result);
-      recordFeatureUsage(FEATURE_NAMES.BLOG_POST_WRITER);
+      await recordFeatureUsage(FEATURE_NAMES.BLOG_POST_WRITER);
       toast({ title: "Success", description: "Blog post generated successfully!" });
       playNotificationSound(soundSettings);
     } catch (error) {

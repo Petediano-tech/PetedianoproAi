@@ -54,7 +54,7 @@ export default function VideoScriptGeneratorPage() {
       return;
     }
 
-    if (!canUseFeature(FEATURE_NAMES.VIDEO_SCRIPT_GENERATOR)) {
+    if (!await canUseFeature(FEATURE_NAMES.VIDEO_SCRIPT_GENERATOR)) {
       showUpgradeToast();
       return;
     }
@@ -78,7 +78,7 @@ export default function VideoScriptGeneratorPage() {
       };
       const result = await generateVideoScript(input);
       setGeneratedScript(result);
-      recordFeatureUsage(FEATURE_NAMES.VIDEO_SCRIPT_GENERATOR);
+      await recordFeatureUsage(FEATURE_NAMES.VIDEO_SCRIPT_GENERATOR);
       toast({ title: "Success", description: "Video script generated successfully!" });
       playNotificationSound(soundSettings);
     } catch (error) {

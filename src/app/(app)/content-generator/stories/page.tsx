@@ -57,7 +57,7 @@ export default function StoryGeneratorPage() {
       toast({ title: "Error", description: "Please enter a topic for the story.", variant: "destructive" });
       return;
     }
-    if (!canUseFeature(FEATURE_NAMES.STORIES)) {
+    if (!await canUseFeature(FEATURE_NAMES.STORIES)) {
       showUpgradeToast(); return;
     }
 
@@ -80,7 +80,7 @@ export default function StoryGeneratorPage() {
           isImageLoading: false,
         }))
       });
-      recordFeatureUsage(FEATURE_NAMES.STORIES);
+      await recordFeatureUsage(FEATURE_NAMES.STORIES);
       toast({ title: "Success", description: "Story text generated!" });
       playNotificationSound(soundSettings);
     } catch (error) {
@@ -99,14 +99,14 @@ export default function StoryGeneratorPage() {
 
     const updatedPages = [...story.pages];
     for (let i = 0; i < updatedPages.length; i++) {
-        if (!canUseFeature(FEATURE_NAMES.STORIES)) {
+        if (!await canUseFeature(FEATURE_NAMES.PICTURE_GENERATOR)) {
             showUpgradeToast(); break;
         }
         try {
             const input: GenerateStoryImageInput = { imageDescription: updatedPages[i].imageDescription };
             const result = await generateStoryImage(input);
             updatedPages[i].imageUrl = result.imageUrl;
-            recordFeatureUsage(FEATURE_NAMES.STORIES);
+            await recordFeatureUsage(FEATURE_NAMES.PICTURE_GENERATOR);
         } catch (error) {
             console.error(`Error generating image for scene ${i + 1}:`, error);
             toast({ title: `Image ${i+1} Failed`, variant: "destructive" });

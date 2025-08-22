@@ -62,7 +62,7 @@ export default function FileAnalyzerPage() {
       return;
     }
 
-    if (!canUseFeature(FEATURE_NAMES.FILE_ANALYZER)) {
+    if (!await canUseFeature(FEATURE_NAMES.FILE_ANALYZER)) {
       showUpgradeToast();
       return;
     }
@@ -76,7 +76,7 @@ export default function FileAnalyzerPage() {
       const result: AnalyzeUploadedFileOutput = await analyzeUploadedFile(input);
       setTimeout(() => setProgress(100), 1000);
       setAnalysisResult(result);
-      recordFeatureUsage(FEATURE_NAMES.FILE_ANALYZER);
+      await recordFeatureUsage(FEATURE_NAMES.FILE_ANALYZER);
       toast({ title: "Success", description: "File analyzed successfully!" });
       playNotificationSound(soundSettings);
     } catch (error) {

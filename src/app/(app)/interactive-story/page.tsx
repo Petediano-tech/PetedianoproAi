@@ -60,7 +60,7 @@ export default function InteractiveStoryPage() {
       toast({ title: "Missing Topic", description: "Please enter a topic to start your story.", variant: "destructive" });
       return;
     }
-    if (!canUseFeature(FEATURE_NAMES.STORIES)) {
+    if (!await canUseFeature(FEATURE_NAMES.INTERACTIVE_STORY_GENERATOR)) {
       showUpgradeToast(); return;
     }
 
@@ -72,7 +72,7 @@ export default function InteractiveStoryPage() {
       const result = await startInteractiveStory(input);
       setCurrentScene(result);
       setStoryHistory([{ text: result.text, choice: null, imageUrl: '' }]);
-      recordFeatureUsage(FEATURE_NAMES.STORIES);
+      await recordFeatureUsage(FEATURE_NAMES.INTERACTIVE_STORY_GENERATOR);
       playNotificationSound(soundSettings);
       generateImageForScene(0, result.imageDescription);
     } catch (error) {
@@ -85,7 +85,7 @@ export default function InteractiveStoryPage() {
   };
 
   const handleChoice = async (choice: string) => {
-    if (!canUseFeature(FEATURE_NAMES.STORIES)) {
+    if (!await canUseFeature(FEATURE_NAMES.INTERACTIVE_STORY_GENERATOR)) {
       showUpgradeToast(); return;
     }
     
@@ -104,7 +104,7 @@ export default function InteractiveStoryPage() {
       setCurrentScene(result);
       // Add the new scene to history
       setStoryHistory([...previousHistory, finalizedScene, { text: result.text, choice: null, imageUrl: '' }]);
-      recordFeatureUsage(FEATURE_NAMES.STORIES);
+      await recordFeatureUsage(FEATURE_NAMES.INTERACTIVE_STORY_GENERATOR);
       playNotificationSound(soundSettings);
       generateImageForScene(storyHistory.length, result.imageDescription);
     } catch (error) {
@@ -118,7 +118,7 @@ export default function InteractiveStoryPage() {
   const generateImageForScene = async (index: number, imageDescription: string) => {
     setIsImageLoading(true);
     try {
-        if (!canUseFeature(FEATURE_NAMES.PICTURE_GENERATOR)) {
+        if (!await canUseFeature(FEATURE_NAMES.PICTURE_GENERATOR)) {
             showUpgradeToast(); return;
         }
         const input: GenerateStoryImageInput = { imageDescription };
@@ -131,7 +131,7 @@ export default function InteractiveStoryPage() {
             }
             return newHistory;
         });
-        recordFeatureUsage(FEATURE_NAMES.PICTURE_GENERATOR);
+        await recordFeatureUsage(FEATURE_NAMES.PICTURE_GENERATOR);
     } catch (error) {
         console.error(`Error generating image for scene ${index + 1}:`, error);
         toast({ title: `Image Generation Failed`, description: `Could not create an image for the latest scene.`, variant: "destructive" });

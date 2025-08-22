@@ -53,7 +53,7 @@ export default function PictureGeneratorPage() {
       return;
     }
 
-    if (!canUseFeature(FEATURE_NAMES.PICTURE_GENERATOR)) {
+    if (!await canUseFeature(FEATURE_NAMES.PICTURE_GENERATOR)) {
       showUpgradeToast();
       return;
     }
@@ -73,7 +73,7 @@ export default function PictureGeneratorPage() {
       const result: GenerateOriginalPicturesOutput = await generateOriginalPictures(input);
       setTimeout(() => setProgress(100), 1000);
       setGeneratedImageUrl(result.imageUrl);
-      recordFeatureUsage(FEATURE_NAMES.PICTURE_GENERATOR);
+      await recordFeatureUsage(FEATURE_NAMES.PICTURE_GENERATOR);
       toast({ title: "Success", description: "Picture generated successfully!" });
       playNotificationSound(soundSettings);
     } catch (error) {

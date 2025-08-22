@@ -57,7 +57,7 @@ export default function PhotoEditorPage() {
       return;
     }
 
-    if (!canUseFeature(FEATURE_NAMES.PHOTO_EDITOR)) {
+    if (!await canUseFeature(FEATURE_NAMES.PHOTO_EDITOR)) {
       showUpgradeToast();
       return;
     }
@@ -71,7 +71,7 @@ export default function PhotoEditorPage() {
       setTimeout(() => setProgress(100), 1000);
       setEnhancedImage(result.enhancedPhotoDataUri);
       setEnhancementDetails(result.enhancementDetails);
-      recordFeatureUsage(FEATURE_NAMES.PHOTO_EDITOR);
+      await recordFeatureUsage(FEATURE_NAMES.PHOTO_EDITOR);
       toast({ title: "Success", description: "Image enhanced successfully!" });
       playNotificationSound(soundSettings);
     } catch (error) {

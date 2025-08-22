@@ -56,7 +56,7 @@ export default function ImageCaptionGeneratorPage() {
       toast({ title: "Missing Image", description: "Please upload an image first.", variant: "destructive" });
       return;
     }
-    if (!canUseFeature(FEATURE_NAMES.IMAGE_CAPTION_GENERATOR)) {
+    if (!await canUseFeature(FEATURE_NAMES.IMAGE_CAPTION_GENERATOR)) {
       showUpgradeToast();
       return;
     }
@@ -73,7 +73,7 @@ export default function ImageCaptionGeneratorPage() {
       const input: GenerateImageCaptionInput = { photoDataUri, tone: tone as GenerateImageCaptionInput['tone'] };
       const result = await generateImageCaption(input);
       setGeneratedOutput(result);
-      recordFeatureUsage(FEATURE_NAMES.IMAGE_CAPTION_GENERATOR);
+      await recordFeatureUsage(FEATURE_NAMES.IMAGE_CAPTION_GENERATOR);
       toast({ title: "Success", description: "Captions generated successfully!" });
       playNotificationSound(soundSettings);
     } catch (error) {

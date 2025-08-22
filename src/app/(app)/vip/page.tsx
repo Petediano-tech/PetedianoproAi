@@ -24,6 +24,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import Confetti from 'react-confetti';
 import { useWindowSize } from '@/hooks/useWindowSize';
+import { useAuth } from '@/context/AuthProvider';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 
 // Conceptual SVGs for payment logos
@@ -41,12 +44,13 @@ const vipPlans = [
 ];
 type Plan = typeof vipPlans[0];
 
-const ATTEMPTS_STORAGE_KEY = 'petedianoProPasskeyAttempts';
+const ATTEMPTS_STORAGE_KEY_PREFIX = 'petedianoProPasskeyAttempts_';
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_DURATIONS = [ 30 * 60 * 1000, 60 * 60 * 1000, 3 * 60 * 60 * 1000 ]; 
 interface AttemptData { count: number; lockoutLevel: number; lockedUntil: number; }
 
 export default function VipPage() {
+  const { user } = useAuth();
   const [passkey, setPasskey] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -60,12 +64,37 @@ export default function VipPage() {
   const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
-    setCurrentIsVip(isUserVip());
+    if (!user) return;
+    const unsubscribe = onSnapshot(doc(db, "users", user.uid), (doc) => {
+      const userData = doc.data();
+      if (userData?.vipStatus && userData.vipStatus !== 'free') {
+        if (userData.vipExpiry) {
+          const expiry = new Date(userData.vipExpiry);
+          if (expiry > new Date()) {
+            setCurrentIsVip(true);
+          } else {
+            setCurrentIsVip(false);
+          }
+        } else if (userData.vipStatus === 'lifetime') {
+          setCurrentIsVip(true);
+        } else {
+          setCurrentIsVip(false);
+        }
+      } else {
+        setCurrentIsVip(false);
+      }
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const ATTEMPTS_STORAGE_KEY = `${ATTEMPTS_STORAGE_KEY_PREFIX}${user.uid}`;
     const storedAttempts = localStorage.getItem(ATTEMPTS_STORAGE_KEY);
     if (storedAttempts) setAttemptData(JSON.parse(storedAttempts));
     const interval = setInterval(() => setTimer(t => t + 1), 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
   
   const isLocked = useMemo(() => {
     return attemptData.lockedUntil > Date.now();
@@ -90,7 +119,13 @@ export default function VipPage() {
     return message.trim();
   };
 
-  const handlePasskeySubmit = () => {
+  const handlePasskeySubmit = async () => {
+    if (!user) {
+        toast({ title: "Not logged in", description: "You must be logged in to activate a passkey.", variant: "destructive" });
+        return;
+    }
+
+    const ATTEMPTS_STORAGE_KEY = `${ATTEMPTS_STORAGE_KEY_PREFIX}${user.uid}`;
     if (isLocked) {
       toast({ title: "Rate Limited", description: getLockoutMessage(), variant: "destructive" });
       return;
@@ -98,35 +133,37 @@ export default function VipPage() {
     
     setIsLoading(true);
 
-    setTimeout(() => {
-      const result = validateAndUsePasskey(passkey);
+    try {
+        const result = await validateAndUsePasskey(user.uid, passkey);
 
-      if (result.success) {
-        toast({ title: "🎉 Congratulations! 🎉", description: result.message, duration: 7000 });
-        setShowConfetti(true);
-        setCurrentIsVip(true);
-        setPasskey('');
-        localStorage.removeItem(ATTEMPTS_STORAGE_KEY);
-      } else {
-        toast({ title: "Invalid Passkey", description: result.message, variant: "destructive" });
-        const now = Date.now();
-        const newCount = attemptData.count + 1;
-        let newLockoutLevel = attemptData.lockoutLevel;
-        let newLockedUntil = attemptData.lockedUntil;
-        if (newCount >= MAX_ATTEMPTS) {
-          newLockoutLevel = Math.min(newLockoutLevel + 1, LOCKOUT_DURATIONS.length);
-          newLockedUntil = now + (LOCKOUT_DURATIONS[newLockoutLevel-1] || 24 * 60 * 60 * 1000);
+        if (result.success) {
+            toast({ title: "🎉 Congratulations! 🎉", description: result.message, duration: 7000 });
+            setShowConfetti(true);
+            setPasskey('');
+            localStorage.removeItem(ATTEMPTS_STORAGE_KEY);
+        } else {
+            toast({ title: "Invalid Passkey", description: result.message, variant: "destructive" });
+            const now = Date.now();
+            const newCount = attemptData.count + 1;
+            let newLockoutLevel = attemptData.lockoutLevel;
+            let newLockedUntil = attemptData.lockedUntil;
+            if (newCount >= MAX_ATTEMPTS) {
+                newLockoutLevel = Math.min(newLockoutLevel + 1, LOCKOUT_DURATIONS.length);
+                newLockedUntil = now + (LOCKOUT_DURATIONS[newLockoutLevel - 1] || 24 * 60 * 60 * 1000);
+            }
+            const newAttemptData: AttemptData = {
+                count: newCount >= MAX_ATTEMPTS ? 0 : newCount,
+                lockoutLevel: newLockoutLevel,
+                lockedUntil: newLockedUntil,
+            };
+            setAttemptData(newAttemptData);
+            localStorage.setItem(ATTEMPTS_STORAGE_KEY, JSON.stringify(newAttemptData));
         }
-        const newAttemptData: AttemptData = {
-          count: newCount >= MAX_ATTEMPTS ? 0 : newCount,
-          lockoutLevel: newLockoutLevel,
-          lockedUntil: newLockedUntil,
-        };
-        setAttemptData(newAttemptData);
-        localStorage.setItem(ATTEMPTS_STORAGE_KEY, JSON.stringify(newAttemptData));
-      }
-      setIsLoading(false);
-    }, 500);
+    } catch(e) {
+        toast({ title: "Error", description: "An unexpected error occurred.", variant: "destructive" });
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const handleOnlinePayment = () => {
@@ -140,7 +177,7 @@ export default function VipPage() {
         duration: 10000,
       });
       setShowConfetti(true);
-      setCurrentIsVip(true);
+      // No need to set currentIsVip, the snapshot listener will do it.
       setIsProcessingPayment(false);
     }, 2500);
   };

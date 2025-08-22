@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview Manages VIP passkey validation, usage, and activation.
  * WARNING: THIS IS A CLIENT-SIDE IMPLEMENTATION FOR DEMONSTRATION.
@@ -7,18 +8,19 @@
  * from the application's source code. This implementation is purely
  * for creating the user experience as requested.
  */
+import { db } from './firebase';
+import { doc, getDoc, writeBatch } from 'firebase/firestore';
 
-const PASSKEYS_STORAGE_KEY = 'petedianoProUsedPasskeys';
-const VIP_INFO_KEY = 'petedianoProVipInfo';
+const PASSKEYS_COLLECTION = 'passkeys';
+const USERS_COLLECTION = 'users';
 
 interface VipInfo {
-  passkey: string;
   type: 'monthly' | 'quarterly' | 'yearly' | 'lifetime';
   activationDate: string;
   expiryDate: string | null; // null for lifetime
 }
 
-const passkeys = {
+const passkeyTypes = {
   monthly: [
     'aB3!Xq', 'cD4@Yr', 'eF5#Zs', 'gH6$At', 'iJ7%Bu', 'kL8^Cv', 'mN9&Dw', 'oP0*Ex', 'qR1!Fy', 'sT2@Gz',
     'uV3#Ha', 'wX4$Ib', 'yZ5%Jc', 'bC6^Kd', 'dE7&Le', 'fG8*Mf', 'hI9!Ng', 'jK0@Oh', 'lM1#Pi', 'nO2$Qj',
@@ -69,26 +71,12 @@ const passkeys = {
   ]
 };
 
-function getUsedPasskeys(): string[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const stored = localStorage.getItem(PASSKEYS_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch (error) {
-    console.error("Error reading used passkeys from localStorage:", error);
-    return [];
-  }
-}
-
-function addUsedPasskey(passkey: string): void {
-  if (typeof window === 'undefined') return;
-  try {
-    const used = getUsedPasskeys();
-    used.push(passkey);
-    localStorage.setItem(PASSKEYS_STORAGE_KEY, JSON.stringify(used));
-  } catch (error) {
-    console.error("Error saving used passkey to localStorage:", error);
-  }
+function getPasskeyType(passkey: string): VipInfo['type'] | null {
+  if (passkeyTypes.monthly.includes(passkey)) return 'monthly';
+  if (passkeyTypes.quarterly.includes(passkey)) return 'quarterly';
+  if (passkeyTypes.yearly.includes(passkey)) return 'yearly';
+  if (passkeyTypes.lifetime.includes(passkey)) return 'lifetime';
+  return null;
 }
 
 function calculateExpiry(type: VipInfo['type'], activationDate: Date): Date | null {
@@ -110,38 +98,41 @@ function calculateExpiry(type: VipInfo['type'], activationDate: Date): Date | nu
   }
 }
 
-export function validateAndUsePasskey(passkey: string): { success: boolean; type?: VipInfo['type']; message: string } {
-  if (typeof window === 'undefined') {
-    return { success: false, message: 'Cannot validate passkey on the server.' };
+export async function validateAndUsePasskey(userId: string, passkey: string): Promise<{ success: boolean; type?: VipInfo['type']; message: string }> {
+  const passkeyType = getPasskeyType(passkey);
+  
+  if (!passkeyType) {
+    return { success: false, message: 'Invalid passkey.' };
   }
 
-  const usedPasskeys = getUsedPasskeys();
-  if (usedPasskeys.includes(passkey)) {
+  const passkeyDocRef = doc(db, PASSKEYS_COLLECTION, passkey);
+  const passkeyDoc = await getDoc(passkeyDocRef);
+
+  if (passkeyDoc.exists() && passkeyDoc.data().used) {
     return { success: false, message: 'This passkey has already been used.' };
   }
 
-  let type: VipInfo['type'] | null = null;
-  if (passkeys.monthly.includes(passkey)) type = 'monthly';
-  else if (passkeys.quarterly.includes(passkey)) type = 'quarterly';
-  else if (passkeys.yearly.includes(passkey)) type = 'yearly';
-  else if (passkeys.lifetime.includes(passkey)) type = 'lifetime';
+  const userDocRef = doc(db, USERS_COLLECTION, userId);
+  const activationDate = new Date();
+  const expiryDate = calculateExpiry(passkeyType, activationDate);
 
-  if (type) {
-    const activationDate = new Date();
-    const expiryDate = calculateExpiry(type, activationDate);
+  const batch = writeBatch(db);
 
-    const vipInfo: VipInfo = {
-      passkey,
-      type,
-      activationDate: activationDate.toISOString(),
-      expiryDate: expiryDate ? expiryDate.toISOString() : null,
-    };
+  // Mark passkey as used
+  batch.set(passkeyDocRef, { used: true, usedBy: userId, usedAt: activationDate.toISOString() });
+  
+  // Update user's VIP status
+  batch.update(userDocRef, {
+    vipStatus: passkeyType,
+    vipActivationDate: activationDate.toISOString(),
+    vipExpiry: expiryDate ? expiryDate.toISOString() : null,
+  });
 
-    localStorage.setItem(VIP_INFO_KEY, JSON.stringify(vipInfo));
-    addUsedPasskey(passkey);
-
-    return { success: true, type, message: `Successfully activated ${type} VIP access!` };
+  try {
+    await batch.commit();
+    return { success: true, type: passkeyType, message: `Successfully activated ${passkeyType} VIP access!` };
+  } catch (error) {
+    console.error("Error activating passkey:", error);
+    return { success: false, message: 'An error occurred while activating the passkey.' };
   }
-
-  return { success: false, message: 'Invalid passkey.' };
 }

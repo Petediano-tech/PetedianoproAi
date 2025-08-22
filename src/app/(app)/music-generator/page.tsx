@@ -10,13 +10,10 @@ import { generateMusic } from '@/ai/flows/generate-music';
 import type { GenerateMusicInput, GenerateMusicOutput } from '@/ai/flows/music.types';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { canUseFeature, recordFeatureUsage } from '@/lib/usage-limiter';
+import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
 import Link from 'next/link';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
-
-// A new feature name needs to be added to the limiter
-const FEATURE_NAME = 'MUSIC_GENERATOR';
 
 export default function MusicGeneratorPage() {
   const [prompt, setPrompt] = useState<string>("");
@@ -41,7 +38,7 @@ export default function MusicGeneratorPage() {
       toast({ title: "Missing Prompt", description: "Please enter a description for the music.", variant: "destructive" });
       return;
     }
-    if (!canUseFeature(FEATURE_NAME)) {
+    if (!await canUseFeature(FEATURE_NAMES.MUSIC_GENERATOR)) {
       showUpgradeToast();
       return;
     }
@@ -63,7 +60,7 @@ export default function MusicGeneratorPage() {
       const input: GenerateMusicInput = { prompt };
       const result: GenerateMusicOutput = await generateMusic(input);
       setGeneratedAudio(result.audioDataUri);
-      recordFeatureUsage(FEATURE_NAME);
+      await recordFeatureUsage(FEATURE_NAMES.MUSIC_GENERATOR);
       toast({ title: "Success", description: "Audio generated successfully!" });
       playNotificationSound(soundSettings);
       

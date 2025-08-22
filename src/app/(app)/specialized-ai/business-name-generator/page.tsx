@@ -43,7 +43,7 @@ export default function BusinessNameGeneratorPage() {
       toast({ title: "Missing Field", description: "Please enter an industry.", variant: "destructive" });
       return;
     }
-    if (!canUseFeature(FEATURE_NAMES.BUSINESS_NAME_GENERATOR)) {
+    if (!await canUseFeature(FEATURE_NAMES.BUSINESS_NAME_GENERATOR)) {
       showUpgradeToast();
       return;
     }
@@ -60,7 +60,7 @@ export default function BusinessNameGeneratorPage() {
       const input: GenerateBusinessNameInput = { industry, keywords, style: style as GenerateBusinessNameInput['style'] };
       const result = await generateBusinessName(input);
       setGeneratedOutput(result);
-      recordFeatureUsage(FEATURE_NAMES.BUSINESS_NAME_GENERATOR);
+      await recordFeatureUsage(FEATURE_NAMES.BUSINESS_NAME_GENERATOR);
       toast({ title: "Success", description: "Business names generated!" });
       playNotificationSound(soundSettings);
     } catch (error) {

@@ -41,7 +41,7 @@ export default function TripPlannerPage() {
       toast({ title: "Missing Fields", description: "Please enter a destination and some interests.", variant: "destructive" });
       return;
     }
-    if (!canUseFeature(FEATURE_NAMES.TRIP_PLANNER)) {
+    if (!await canUseFeature(FEATURE_NAMES.TRIP_PLANNER)) {
       showUpgradeToast();
       return;
     }
@@ -58,7 +58,7 @@ export default function TripPlannerPage() {
       const input: GenerateTripPlanInput = { destination, lengthInDays: lengthInDays[0], interests };
       const result = await generateTripPlan(input);
       setGeneratedPlan(result);
-      recordFeatureUsage(FEATURE_NAMES.TRIP_PLANNER);
+      await recordFeatureUsage(FEATURE_NAMES.TRIP_PLANNER);
       toast({ title: "Success", description: "Trip itinerary generated!" });
       playNotificationSound(soundSettings);
     } catch (error) {

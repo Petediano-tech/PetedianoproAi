@@ -40,7 +40,7 @@ export default function CodeExplainerPage() {
       toast({ title: "Missing Fields", description: "Please provide both a code snippet and its language.", variant: "destructive" });
       return;
     }
-    if (!canUseFeature(FEATURE_NAMES.CODE_EXPLAINER)) {
+    if (!await canUseFeature(FEATURE_NAMES.CODE_EXPLAINER)) {
       showUpgradeToast();
       return;
     }
@@ -57,7 +57,7 @@ export default function CodeExplainerPage() {
       const input: ExplainCodeInput = { codeSnippet, language };
       const result = await explainCode(input);
       setGeneratedOutput(result);
-      recordFeatureUsage(FEATURE_NAMES.CODE_EXPLAINER);
+      await recordFeatureUsage(FEATURE_NAMES.CODE_EXPLAINER);
       toast({ title: "Success", description: "Code explanation generated!" });
       playNotificationSound(soundSettings);
     } catch (error) {

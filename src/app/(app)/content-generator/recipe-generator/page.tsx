@@ -45,7 +45,7 @@ export default function RecipeGeneratorPage() {
       toast({ title: "Missing Ingredients", description: "Please list at least one ingredient.", variant: "destructive" });
       return;
     }
-    if (!canUseFeature(FEATURE_NAMES.RECIPE_GENERATOR)) {
+    if (!await canUseFeature(FEATURE_NAMES.RECIPE_GENERATOR)) {
       showUpgradeToast();
       return;
     }
@@ -62,7 +62,7 @@ export default function RecipeGeneratorPage() {
       const input: GenerateRecipeInput = { ingredients, mealType: mealType as GenerateRecipeInput['mealType'], dietaryNeeds };
       const result = await generateRecipe(input);
       setGeneratedRecipe(result);
-      recordFeatureUsage(FEATURE_NAMES.RECIPE_GENERATOR);
+      await recordFeatureUsage(FEATURE_NAMES.RECIPE_GENERATOR);
       toast({ title: "Success", description: "Recipe generated!" });
       playNotificationSound(soundSettings);
     } catch (error) {

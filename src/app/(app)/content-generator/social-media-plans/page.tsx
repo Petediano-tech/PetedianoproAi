@@ -57,7 +57,7 @@ export default function SocialMediaPlannerPage() {
       toast({ title: "Missing Fields", description: "Please fill in Topic, select at least one Platform, and specify a Goal.", variant: "destructive" });
       return;
     }
-    if (!canUseFeature(FEATURE_NAMES.SOCIAL_MEDIA_CAMPAIGN_PLANNER)) {
+    if (!await canUseFeature(FEATURE_NAMES.SOCIAL_MEDIA_CAMPAIGN_PLANNER)) {
       showUpgradeToast();
       return;
     }
@@ -82,7 +82,7 @@ export default function SocialMediaPlannerPage() {
       };
       const result = await generateSocialCampaign(input);
       setGeneratedCampaign(result);
-      recordFeatureUsage(FEATURE_NAMES.SOCIAL_MEDIA_CAMPAIGN_PLANNER);
+      await recordFeatureUsage(FEATURE_NAMES.SOCIAL_MEDIA_CAMPAIGN_PLANNER);
       toast({ title: "Success", description: "Social media campaign plan generated!" });
       playNotificationSound(soundSettings);
     } catch (error) {
@@ -267,5 +267,3 @@ export default function SocialMediaPlannerPage() {
     </div>
   );
 }
-
-    

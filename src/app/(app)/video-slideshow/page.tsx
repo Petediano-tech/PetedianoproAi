@@ -10,14 +10,12 @@ import { generateVideoSlideshow } from '@/ai/flows/generate-video-slideshow';
 import { type GenerateVideoSlideshowInput } from '@/ai/flows/video-slideshow.types';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { canUseFeature, recordFeatureUsage } from '@/lib/usage-limiter';
+import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
 import Link from 'next/link';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
 import NextImage from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-
-const FEATURE_NAME = 'VIDEO_SLIDESHOW_CREATOR';
 
 interface Slide {
   text: string;
@@ -78,7 +76,7 @@ export default function VideoSlideshowCreatorPage() {
       toast({ title: "Invalid Script", description: "Please format your script correctly with '---' separators and 'Text:' and 'Image:' lines.", variant: "destructive" });
       return;
     }
-    if (!canUseFeature(FEATURE_NAME)) {
+    if (!await canUseFeature(FEATURE_NAMES.VIDEO_SLIDESHOW_CREATOR)) {
       showUpgradeToast();
       return;
     }
@@ -97,7 +95,7 @@ export default function VideoSlideshowCreatorPage() {
       setProgressValue(100);
 
       setGeneratedSlides(result.slides);
-      recordFeatureUsage(FEATURE_NAME);
+      await recordFeatureUsage(FEATURE_NAMES.VIDEO_SLIDESHOW_CREATOR);
       toast({ title: "Success", description: "Video components generated successfully!" });
       playNotificationSound(soundSettings);
     } catch (error) {

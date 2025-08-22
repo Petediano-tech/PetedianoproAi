@@ -39,7 +39,7 @@ export default function QuotesGeneratorPage() {
   };
 
   const handleGenerateQuote = async () => {
-    if (!canUseFeature(FEATURE_NAMES.QUOTES)) {
+    if (!await canUseFeature(FEATURE_NAMES.QUOTES)) {
       showUpgradeToast();
       return;
     }
@@ -57,7 +57,7 @@ export default function QuotesGeneratorPage() {
       if (result.imageUrl) {
         setGeneratedImage(result.imageUrl);
       }
-      recordFeatureUsage(FEATURE_NAMES.QUOTES);
+      await recordFeatureUsage(FEATURE_NAMES.QUOTES);
       toast({ title: "Success", description: "Quote generated successfully!" });
       playNotificationSound(soundSettings);
     } catch (error) {
