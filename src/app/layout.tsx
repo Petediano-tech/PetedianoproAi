@@ -14,6 +14,12 @@ export const metadata: Metadata = {
   formatDetection: {
     telephone: false,
   },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Petediano Pro",
+  },
 };
 
 export default function RootLayout({
@@ -24,6 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <meta name="theme-color" content="#9C27B0" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {AVAILABLE_FONTS.filter(font => font.key !== 'default').map(font => {

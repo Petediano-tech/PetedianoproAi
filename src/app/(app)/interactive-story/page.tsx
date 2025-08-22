@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { MessageCircle, Sparkles, Loader2, BookOpen, ImageIcon } from "lucide-react";
 import Image from "next/image";
+import { Label } from "@/components/ui/label";
 import { 
   startInteractiveStory, type StartInteractiveStoryInput,
   makeStoryChoice, type MakeStoryChoiceInput,
