@@ -14,15 +14,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Settings, User, LogOut, DollarSign, GalleryHorizontal } from 'lucide-react';
+import { useAuth } from '@/context/AuthProvider';
 
-// Dummy user data - replace with actual auth state
-const user = {
-  name: 'Your Name',
-  email: 'your.email@example.com',
-  imageUrl: '', 
-};
-
-const getInitials = (name: string) => {
+const getInitials = (name: string | null | undefined) => {
   if (!name) return 'U';
   const names = name.split(' ');
   if (names.length === 1) return names[0][0].toUpperCase();
@@ -31,10 +25,9 @@ const getInitials = (name: string) => {
 
 
 export function UserNav() {
-  // In a real app, replace this with actual authentication logic
-  const isAuthenticated = true; // Set to true to always show the user menu
-
-  if (!isAuthenticated) {
+  const { user, logout } = useAuth();
+  
+  if (!user) {
     return (
       <Link href="/login">
         <Button variant="ghost">Login</Button>
@@ -45,17 +38,19 @@ export function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="group">
-          <Settings className="h-5 w-5 text-primary transition-transform duration-300 group-data-[state=open]:rotate-90" />
-          <span className="sr-only">Open user menu</span>
+         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={user.photoURL ?? ''} alt={user.displayName ?? 'User'} />
+              <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+            </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.name}</p>
+            <p className="text-sm font-medium leading-none">{user.displayName || 'User'}</p>
             <p className="text-xs leading-none text-muted-foreground">
-              {user.email}
+              {user.email || 'No email'}
             </p>
           </div>
         </DropdownMenuLabel>
@@ -87,7 +82,7 @@ export function UserNav() {
           </Link>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => { /* Handle logout */ console.log('Logout clicked'); }}>
+        <DropdownMenuItem onClick={logout}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>

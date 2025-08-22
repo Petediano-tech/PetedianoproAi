@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -6,13 +7,33 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/icons/Logo";
+import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function ForgotPasswordPage() {
-  const handlePasswordReset = (event: React.FormEvent) => {
+  const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const handlePasswordReset = async (event: React.FormEvent) => {
     event.preventDefault();
-    // Handle password reset logic
-    console.log("Password reset submitted");
-    // Show a toast message like "Password reset link sent to your email if it exists in our system."
+    if (!email) {
+      toast({ title: "Error", description: "Please enter your email address.", variant: "destructive" });
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({ title: "Check Your Email", description: "If an account with that email exists, a password reset link has been sent." });
+    } catch (error: any) {
+      console.error("Password reset failed:", error);
+      // We show a generic message to prevent email enumeration
+      toast({ title: "Check Your Email", description: "If an account with that email exists, a password reset link has been sent." });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -29,9 +50,10 @@ export default function ForgotPasswordPage() {
           <form onSubmit={handlePasswordReset} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
-              <Input id="email" type="email" placeholder="your@email.com" required />
+              <Input id="email" type="email" placeholder="your@email.com" required value={email} onChange={e => setEmail(e.target.value)} />
             </div>
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Send Reset Link
             </Button>
           </form>
