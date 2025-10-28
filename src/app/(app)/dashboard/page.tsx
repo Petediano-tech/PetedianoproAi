@@ -61,23 +61,7 @@ export default function DashboardPage() {
       <Section title="Specialized & Developer AI Tools" features={specializedAIFeatures} />
       <Section title="Community & Fun" features={communityAndFunFeatures} />
 
-      <div className="grid gap-6 md:grid-cols-2">
-         <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <Settings className="h-8 w-8 text-accent" />
-              <CardTitle className="font-headline text-2xl">App Settings</CardTitle>
-            </div>
-            <CardDescription className="pt-2">Customize your app experience, manage your profile, and more.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/settings">
-              <Button variant="outline" className="w-full">
-                Open Settings <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+      <div className="grid gap-6">
         <Card className="bg-gradient-to-r from-primary to-accent text-primary-foreground hover:shadow-xl transition-shadow">
           <CardHeader>
              <div className="flex items-center gap-3">

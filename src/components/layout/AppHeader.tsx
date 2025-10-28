@@ -63,6 +63,11 @@ export function AppHeader() {
         
         <div className="flex items-center gap-2">
           <ModeToggle />
+          <Link href="/settings">
+             <Button variant="ghost" size="icon" aria-label="Settings">
+                <Settings className="h-5 w-5" />
+            </Button>
+          </Link>
            <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
