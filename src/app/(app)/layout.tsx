@@ -44,29 +44,21 @@ export default function AppLayout({
   const { user, isUserLoading } = useUser();
 
   useEffect(() => {
-    // This is a simple, insecure client-side check for admin.
-    const isAdmin = sessionStorage.getItem('isAdmin') === 'true';
-
     // During the initial auth state check, don't redirect yet.
     if (isUserLoading) {
       return;
     }
 
-    // If not admin and not a regular logged-in user, redirect to login.
-    if (!isAdmin && !user) {
+    // If not a regular logged-in user, redirect to login.
+    if (!user) {
       router.replace('/login');
     }
   }, [user, isUserLoading, router]);
 
   const handleLogout = () => {
-    if (sessionStorage.getItem('isAdmin') === 'true') {
-        sessionStorage.removeItem('isAdmin');
+    signOut(auth).then(() => {
         router.push('/');
-    } else {
-        signOut(auth).then(() => {
-            router.push('/');
-        });
-    }
+    });
   };
 
   // Show a loading screen while we verify the user's session.
@@ -79,7 +71,7 @@ export default function AppLayout({
   }
 
   // If we've confirmed the user is not authenticated, render null to prevent flicker before redirect.
-  if (!user && !(sessionStorage.getItem('isAdmin') === 'true')) {
+  if (!user) {
     return null;
   }
   
@@ -88,7 +80,7 @@ export default function AppLayout({
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
-  const displayName = user?.displayName || (sessionStorage.getItem('isAdmin') === 'true' ? 'Admin' : 'User');
+  const displayName = user?.displayName || 'User';
   const displayEmail = user?.email || '';
 
   return (

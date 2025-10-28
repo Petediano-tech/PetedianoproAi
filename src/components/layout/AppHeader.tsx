@@ -30,10 +30,7 @@ export function AppHeader() {
 
 
   const handleLogout = () => {
-    if (sessionStorage.getItem('isAdmin') === 'true') {
-        sessionStorage.removeItem('isAdmin');
-        router.push('/');
-    } else if (auth) {
+    if (auth) {
         signOut(auth).then(() => {
             router.push('/');
         });
@@ -45,7 +42,7 @@ export function AppHeader() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
-  const displayName = user?.displayName || (sessionStorage.getItem('isAdmin') === 'true' ? 'Admin' : 'User');
+  const displayName = user?.displayName || 'User';
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

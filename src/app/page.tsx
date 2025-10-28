@@ -56,56 +56,6 @@ const features = [
 ];
 
 
-function AdminLoginDialog() {
-  const [accessCode, setAccessCode] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
-
-  const handleLogin = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      // Hardcoded admin access code as per user request.
-      // In a real-world scenario, this should be an environment variable.
-      if (accessCode === "24512689") {
-        toast({ title: "Access Granted", description: "Welcome, Admin!" });
-        if (typeof window !== 'undefined') {
-            sessionStorage.setItem('isAdmin', 'true');
-        }
-        router.push('/dashboard');
-      } else {
-        toast({ title: "Access Denied", description: "The provided code is incorrect.", variant: "destructive" });
-        setIsLoading(false);
-      }
-    }, 500);
-  };
-
-  return (
-    <AlertDialogContent>
-      <AlertDialogHeader>
-        <AlertDialogTitle className="flex items-center"><KeyRound className="mr-2"/>Admin Access</AlertDialogTitle>
-        <AlertDialogDescription>
-          Please enter the administrator access code to proceed to the dashboard.
-        </AlertDialogDescription>
-      </AlertDialogHeader>
-      <Input 
-        type="password"
-        placeholder="Enter access code"
-        value={accessCode}
-        onChange={(e) => setAccessCode(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-      />
-      <AlertDialogFooter>
-        <AlertDialogCancel>Cancel</AlertDialogCancel>
-        <AlertDialogAction onClick={handleLogin} disabled={isLoading}>
-          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-          Proceed
-        </AlertDialogAction>
-      </AlertDialogFooter>
-    </AlertDialogContent>
-  );
-}
-
-
 export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -122,12 +72,6 @@ export default function HomePage() {
             <Link href="/signup">
                 <Button>Sign Up</Button>
             </Link>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline">Admin Login</Button>
-              </AlertDialogTrigger>
-              <AdminLoginDialog />
-            </AlertDialog>
           </div>
         </div>
       </header>
