@@ -12,8 +12,6 @@ import { Presentation, Sparkles, Loader2, Download, Copy, ListChecks, Image as I
 import { generatePresentationOutline, type GeneratePresentationOutlineInput, type GeneratePresentationOutlineOutput, type Slide } from '@/ai/flows/generate-presentation-outline';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
-import Link from 'next/link';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
 
@@ -33,23 +31,9 @@ export default function PresentationGeneratorPage() {
   const [progressValue, setProgressValue] = useState(0);
   const { soundSettings } = useSoundSettings();
 
-  const showUpgradeToast = () => {
-    toast({
-      title: "Daily Limit Reached",
-      description: "You've used all your free presentation outlines for today.",
-      variant: "destructive",
-      action: ( <Link href="/vip"> <Button variant="secondary" size="sm">Upgrade to VIP</Button> </Link> ),
-    });
-  };
-
   const handleGenerateOutline = async () => {
     if (!topic || !targetAudience) {
       toast({ title: "Missing Fields", description: "Please fill in Topic and Target Audience.", variant: "destructive" });
-      return;
-    }
-
-    if (!await canUseFeature(FEATURE_NAMES.PRESENTATION_GENERATOR)) {
-      showUpgradeToast();
       return;
     }
 
@@ -72,7 +56,6 @@ export default function PresentationGeneratorPage() {
       };
       const result = await generatePresentationOutline(input);
       setGeneratedOutline(result);
-      await recordFeatureUsage(FEATURE_NAMES.PRESENTATION_GENERATOR);
       toast({ title: "Success", description: "Presentation outline generated successfully!" });
       playNotificationSound(soundSettings);
     } catch (error) {

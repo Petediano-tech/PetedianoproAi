@@ -11,8 +11,6 @@ import Image from "next/image";
 import { analyzeUploadedFile, type AnalyzeUploadedFileInput, type AnalyzeUploadedFileOutput } from '@/ai/flows/analyze-uploaded-file';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
-import Link from 'next/link';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
 
@@ -43,27 +41,9 @@ export default function FileAnalyzerPage() {
     }
   };
 
-  const showUpgradeToast = () => {
-    toast({
-      title: "Daily Limit Reached",
-      description: "You've used all your free file analyses for today.",
-      variant: "destructive",
-      action: (
-        <Link href="/vip">
-          <Button variant="secondary" size="sm">Upgrade to VIP</Button>
-        </Link>
-      ),
-    });
-  };
-
   const handleAnalyzeFile = async () => {
     if (!fileDataUri) {
       toast({ title: "Error", description: "Please upload a file first.", variant: "destructive" });
-      return;
-    }
-
-    if (!await canUseFeature(FEATURE_NAMES.FILE_ANALYZER)) {
-      showUpgradeToast();
       return;
     }
 
@@ -76,7 +56,6 @@ export default function FileAnalyzerPage() {
       const result: AnalyzeUploadedFileOutput = await analyzeUploadedFile(input);
       setTimeout(() => setProgress(100), 1000);
       setAnalysisResult(result);
-      await recordFeatureUsage(FEATURE_NAMES.FILE_ANALYZER);
       toast({ title: "Success", description: "File analyzed successfully!" });
       playNotificationSound(soundSettings);
     } catch (error) {

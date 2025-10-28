@@ -10,8 +10,6 @@ import { generateVideoSlideshow } from '@/ai/flows/generate-video-slideshow';
 import { type GenerateVideoSlideshowInput } from '@/ai/flows/video-slideshow.types';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
-import Link from 'next/link';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
 import NextImage from 'next/image';
@@ -61,23 +59,10 @@ export default function VideoSlideshowCreatorPage() {
       .filter((s): s is Slide => s !== null);
   };
 
-  const showUpgradeToast = () => {
-    toast({
-      title: "Daily Limit Reached",
-      description: "You've used all your free video generations for today.",
-      variant: "destructive",
-      action: ( <Link href="/vip"> <Button variant="secondary" size="sm">Upgrade to VIP</Button> </Link> ),
-    });
-  };
-
   const handleGenerateVideo = async () => {
     const slides = parseScript();
     if (slides.length === 0) {
       toast({ title: "Invalid Script", description: "Please format your script correctly with '---' separators and 'Text:' and 'Image:' lines.", variant: "destructive" });
-      return;
-    }
-    if (!await canUseFeature(FEATURE_NAMES.VIDEO_SLIDESHOW_CREATOR)) {
-      showUpgradeToast();
       return;
     }
 
@@ -95,7 +80,6 @@ export default function VideoSlideshowCreatorPage() {
       setProgressValue(100);
 
       setGeneratedSlides(result.slides);
-      await recordFeatureUsage(FEATURE_NAMES.VIDEO_SLIDESHOW_CREATOR);
       toast({ title: "Success", description: "Video components generated successfully!" });
       playNotificationSound(soundSettings);
     } catch (error) {

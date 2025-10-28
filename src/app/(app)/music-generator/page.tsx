@@ -10,8 +10,6 @@ import { generateMusic } from '@/ai/flows/generate-music';
 import type { GenerateMusicInput, GenerateMusicOutput } from '@/ai/flows/music.types';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
-import Link from 'next/link';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
 
@@ -24,22 +22,9 @@ export default function MusicGeneratorPage() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const showUpgradeToast = () => {
-    toast({
-      title: "Daily Limit Reached",
-      description: "You've used all your free music generations for today.",
-      variant: "destructive",
-      action: ( <Link href="/vip"> <Button variant="secondary" size="sm">Upgrade to VIP</Button> </Link> ),
-    });
-  };
-
   const handleGenerateMusic = async () => {
     if (!prompt) {
       toast({ title: "Missing Prompt", description: "Please enter a description for the music.", variant: "destructive" });
-      return;
-    }
-    if (!await canUseFeature(FEATURE_NAMES.MUSIC_GENERATOR)) {
-      showUpgradeToast();
       return;
     }
 
@@ -60,7 +45,6 @@ export default function MusicGeneratorPage() {
       const input: GenerateMusicInput = { prompt };
       const result: GenerateMusicOutput = await generateMusic(input);
       setGeneratedAudio(result.audioDataUri);
-      await recordFeatureUsage(FEATURE_NAMES.MUSIC_GENERATOR);
       toast({ title: "Success", description: "Audio generated successfully!" });
       playNotificationSound(soundSettings);
       

@@ -12,8 +12,6 @@ import { Image as ImageIcon, Sparkles, Loader2, Copy, Upload, Trash2, Tag, Capti
 import { generateImageCaption, type GenerateImageCaptionInput, type GenerateImageCaptionOutput } from '@/ai/flows/generate-image-caption';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
-import Link from 'next/link';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
 import Image from "next/image";
@@ -42,22 +40,9 @@ export default function ImageCaptionGeneratorPage() {
     }
   };
 
-  const showUpgradeToast = () => {
-    toast({
-      title: "Daily Limit Reached",
-      description: "You've used all your free caption generations for today.",
-      variant: "destructive",
-      action: ( <Link href="/vip"> <Button variant="secondary" size="sm">Upgrade to VIP</Button> </Link> ),
-    });
-  };
-
   const handleGenerateCaptions = async () => {
     if (!photoDataUri) {
       toast({ title: "Missing Image", description: "Please upload an image first.", variant: "destructive" });
-      return;
-    }
-    if (!await canUseFeature(FEATURE_NAMES.IMAGE_CAPTION_GENERATOR)) {
-      showUpgradeToast();
       return;
     }
 
@@ -73,7 +58,6 @@ export default function ImageCaptionGeneratorPage() {
       const input: GenerateImageCaptionInput = { photoDataUri, tone: tone as GenerateImageCaptionInput['tone'] };
       const result = await generateImageCaption(input);
       setGeneratedOutput(result);
-      await recordFeatureUsage(FEATURE_NAMES.IMAGE_CAPTION_GENERATOR);
       toast({ title: "Success", description: "Captions generated successfully!" });
       playNotificationSound(soundSettings);
     } catch (error) {

@@ -12,8 +12,6 @@ import { Newspaper, Sparkles, Loader2, Download, Copy, Tag, FileText as FileText
 import { generateBlogPost, type GenerateBlogPostInput, type GenerateBlogPostOutput, type HeadingSection } from '@/ai/flows/generate-blog-post';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
-import Link from 'next/link';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
 import { Badge } from '@/components/ui/badge';
@@ -34,27 +32,9 @@ export default function BlogPostWriterPage() {
   const [progressValue, setProgressValue] = useState(0);
   const { soundSettings } = useSoundSettings();
 
-  const showUpgradeToast = () => {
-    toast({
-      title: "Daily Limit Reached",
-      description: "You've used all your free blog post generations for today.",
-      variant: "destructive",
-      action: (
-        <Link href="/vip">
-          <Button variant="secondary" size="sm">Upgrade to VIP</Button>
-        </Link>
-      ),
-    });
-  };
-
   const handleGeneratePost = async () => {
     if (!topic || !targetAudience || !tone || !desiredLength) {
       toast({ title: "Missing Fields", description: "Please fill in Topic, Target Audience, Tone, and Desired Length.", variant: "destructive" });
-      return;
-    }
-
-    if (!await canUseFeature(FEATURE_NAMES.BLOG_POST_WRITER)) {
-      showUpgradeToast();
       return;
     }
 
@@ -77,7 +57,6 @@ export default function BlogPostWriterPage() {
       };
       const result = await generateBlogPost(input);
       setGeneratedPost(result);
-      await recordFeatureUsage(FEATURE_NAMES.BLOG_POST_WRITER);
       toast({ title: "Success", description: "Blog post generated successfully!" });
       playNotificationSound(soundSettings);
     } catch (error) {

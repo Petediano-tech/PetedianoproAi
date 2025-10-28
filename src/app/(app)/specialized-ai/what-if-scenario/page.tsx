@@ -12,8 +12,6 @@ import { Lightbulb, Sparkles, Loader2, Download, Copy, AlertTriangle, CheckCircl
 import { generateWhatIfScenario, type GenerateWhatIfScenarioInput, type GenerateWhatIfScenarioOutput, type Scenario } from '@/ai/flows/generate-what-if-scenario';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
-import Link from 'next/link';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
 import { Badge } from '@/components/ui/badge';
@@ -29,23 +27,9 @@ export default function WhatIfScenarioGeneratorPage() {
   const [progressValue, setProgressValue] = useState(0);
   const { soundSettings } = useSoundSettings();
 
-  const showUpgradeToast = () => {
-    toast({
-      title: "Daily Limit Reached",
-      description: "You've used all your free scenario generations for today.",
-      variant: "destructive",
-      action: ( <Link href="/vip"> <Button variant="secondary" size="sm">Upgrade to VIP</Button> </Link> ),
-    });
-  };
-
   const handleGenerateScenario = async () => {
     if (!baseSituation) {
       toast({ title: "Missing Field", description: "Please provide a base situation or premise.", variant: "destructive" });
-      return;
-    }
-
-    if (!await canUseFeature(FEATURE_NAMES.WHAT_IF_SCENARIO_GENERATOR)) {
-      showUpgradeToast();
       return;
     }
 
@@ -61,7 +45,6 @@ export default function WhatIfScenarioGeneratorPage() {
       const input: GenerateWhatIfScenarioInput = { baseSituation, pointOfDivergence, numberOfVariations, customInstructions };
       const result = await generateWhatIfScenario(input);
       setGeneratedOutput(result);
-      await recordFeatureUsage(FEATURE_NAMES.WHAT_IF_SCENARIO_GENERATOR);
       toast({ title: "Success", description: "Scenarios generated!" });
       playNotificationSound(soundSettings);
     } catch (error) {

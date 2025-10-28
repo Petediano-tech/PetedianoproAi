@@ -10,8 +10,6 @@ import Image from "next/image";
 import { aiPhotoEnhancer, type AiPhotoEnhancerInput, type AiPhotoEnhancerOutput } from '@/ai/flows/ai-photo-enhancer';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
-import Link from 'next/link';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
 
@@ -36,27 +34,9 @@ export default function PhotoEditorPage() {
     }
   };
 
-  const showUpgradeToast = () => {
-    toast({
-      title: "Daily Limit Reached",
-      description: "You've used all your free photo enhancements for today.",
-      variant: "destructive",
-      action: (
-        <Link href="/vip">
-          <Button variant="secondary" size="sm">Upgrade to VIP</Button>
-        </Link>
-      ),
-    });
-  };
-
   const handleEnhanceImage = async () => {
     if (!uploadedImage) {
       toast({ title: "Error", description: "Please upload an image first.", variant: "destructive" });
-      return;
-    }
-
-    if (!await canUseFeature(FEATURE_NAMES.PHOTO_EDITOR)) {
-      showUpgradeToast();
       return;
     }
 
@@ -69,7 +49,6 @@ export default function PhotoEditorPage() {
       setTimeout(() => setProgress(100), 1000);
       setEnhancedImage(result.enhancedPhotoDataUri);
       setEnhancementDetails(result.enhancementDetails);
-      await recordFeatureUsage(FEATURE_NAMES.PHOTO_EDITOR);
       toast({ title: "Success", description: "Image enhanced successfully!" });
       playNotificationSound(soundSettings);
     } catch (error) {

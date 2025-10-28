@@ -12,8 +12,6 @@ import Image from "next/image";
 import { generateOriginalPictures, type GenerateOriginalPicturesInput, type GenerateOriginalPicturesOutput } from '@/ai/flows/generate-original-pictures';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
-import Link from 'next/link';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
 
@@ -34,27 +32,9 @@ export default function PictureGeneratorPage() {
 
   const { soundSettings } = useSoundSettings();
 
-  const showUpgradeToast = () => {
-    toast({
-      title: "Daily Limit Reached",
-      description: "You've used all your free picture generations for today.",
-      variant: "destructive",
-      action: (
-        <Link href="/vip">
-          <Button variant="secondary" size="sm">Upgrade to VIP</Button>
-        </Link>
-      ),
-    });
-  };
-
   const handleGeneratePicture = async () => {
     if (!promptText) {
       toast({ title: "Error", description: "Please enter a prompt for the image.", variant: "destructive" });
-      return;
-    }
-
-    if (!await canUseFeature(FEATURE_NAMES.PICTURE_GENERATOR)) {
-      showUpgradeToast();
       return;
     }
 
@@ -73,7 +53,6 @@ export default function PictureGeneratorPage() {
       const result: GenerateOriginalPicturesOutput = await generateOriginalPictures(input);
       setTimeout(() => setProgress(100), 1000);
       setGeneratedImageUrl(result.imageUrl);
-      await recordFeatureUsage(FEATURE_NAMES.PICTURE_GENERATOR);
       toast({ title: "Success", description: "Picture generated successfully!" });
       playNotificationSound(soundSettings);
     } catch (error) {

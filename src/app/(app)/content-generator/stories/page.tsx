@@ -14,8 +14,6 @@ import {
   generateStoryImage, type GenerateStoryImageInput
 } from '@/ai/flows/generate-story-with-images';
 import { toast } from '@/hooks/use-toast';
-import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
-import Link from 'next/link';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
 import jsPDF from 'jspdf';
@@ -43,22 +41,10 @@ export default function StoryGeneratorPage() {
   
   const { soundSettings } = useSoundSettings();
 
-  const showUpgradeToast = () => {
-    toast({
-      title: "Daily Limit Reached",
-      description: "You've used all your free story generations for today.",
-      variant: "destructive",
-      action: ( <Link href="/vip"> <Button variant="secondary" size="sm">Upgrade to VIP</Button> </Link> ),
-    });
-  };
-
   const handleGenerateStoryText = async () => {
     if (!topic) {
       toast({ title: "Error", description: "Please enter a topic for the story.", variant: "destructive" });
       return;
-    }
-    if (!await canUseFeature(FEATURE_NAMES.STORIES)) {
-      showUpgradeToast(); return;
     }
 
     setIsStoryLoading(true);
@@ -80,7 +66,6 @@ export default function StoryGeneratorPage() {
           isImageLoading: false,
         }))
       });
-      await recordFeatureUsage(FEATURE_NAMES.STORIES);
       toast({ title: "Success", description: "Story text generated!" });
       playNotificationSound(soundSettings);
     } catch (error) {
@@ -99,14 +84,10 @@ export default function StoryGeneratorPage() {
 
     const updatedPages = [...story.pages];
     for (let i = 0; i < updatedPages.length; i++) {
-        if (!await canUseFeature(FEATURE_NAMES.PICTURE_GENERATOR)) {
-            showUpgradeToast(); break;
-        }
         try {
             const input: GenerateStoryImageInput = { imageDescription: updatedPages[i].imageDescription };
             const result = await generateStoryImage(input);
             updatedPages[i].imageUrl = result.imageUrl;
-            await recordFeatureUsage(FEATURE_NAMES.PICTURE_GENERATOR);
         } catch (error) {
             console.error(`Error generating image for scene ${i + 1}:`, error);
             toast({ title: `Image ${i+1} Failed`, variant: "destructive" });

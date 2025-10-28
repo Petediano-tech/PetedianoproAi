@@ -12,8 +12,6 @@ import { Briefcase, Sparkles, Loader2, Download, Copy } from "lucide-react";
 import { generateBusinessName, type GenerateBusinessNameInput, type GenerateBusinessNameOutput } from '@/ai/flows/generate-business-name';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
-import Link from 'next/link';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
 
@@ -29,22 +27,9 @@ export default function BusinessNameGeneratorPage() {
   const [progressValue, setProgressValue] = useState(0);
   const { soundSettings } = useSoundSettings();
 
-  const showUpgradeToast = () => {
-    toast({
-      title: "Daily Limit Reached",
-      description: "You've used all your free name generations for today.",
-      variant: "destructive",
-      action: ( <Link href="/vip"> <Button variant="secondary" size="sm">Upgrade to VIP</Button> </Link> ),
-    });
-  };
-
   const handleGenerateNames = async () => {
     if (!industry) {
       toast({ title: "Missing Field", description: "Please enter an industry.", variant: "destructive" });
-      return;
-    }
-    if (!await canUseFeature(FEATURE_NAMES.BUSINESS_NAME_GENERATOR)) {
-      showUpgradeToast();
       return;
     }
 
@@ -60,7 +45,6 @@ export default function BusinessNameGeneratorPage() {
       const input: GenerateBusinessNameInput = { industry, keywords, style: style as GenerateBusinessNameInput['style'] };
       const result = await generateBusinessName(input);
       setGeneratedOutput(result);
-      await recordFeatureUsage(FEATURE_NAMES.BUSINESS_NAME_GENERATOR);
       toast({ title: "Success", description: "Business names generated!" });
       playNotificationSound(soundSettings);
     } catch (error) {

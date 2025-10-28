@@ -13,8 +13,6 @@ import { Share2 as ShareIcon, Sparkles, Loader2, Download, Copy, MessageSquare, 
 import { generateSocialCampaign, type GenerateSocialCampaignInput, type GenerateSocialCampaignOutput, type PostIdea, type SocialPlatform } from '@/ai/flows/generate-social-campaign';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
-import Link from 'next/link';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
 import { Badge } from '@/components/ui/badge';
@@ -43,22 +41,9 @@ export default function SocialMediaPlannerPage() {
     );
   };
 
-  const showUpgradeToast = () => {
-    toast({
-      title: "Daily Limit Reached",
-      description: "You've used all your free campaign plans for today.",
-      variant: "destructive",
-      action: ( <Link href="/vip"> <Button variant="secondary" size="sm">Upgrade to VIP</Button> </Link> ),
-    });
-  };
-
   const handleGenerateCampaign = async () => {
     if (!campaignTopic || targetPlatforms.length === 0 || !campaignGoal) {
       toast({ title: "Missing Fields", description: "Please fill in Topic, select at least one Platform, and specify a Goal.", variant: "destructive" });
-      return;
-    }
-    if (!await canUseFeature(FEATURE_NAMES.SOCIAL_MEDIA_CAMPAIGN_PLANNER)) {
-      showUpgradeToast();
       return;
     }
 
@@ -82,7 +67,6 @@ export default function SocialMediaPlannerPage() {
       };
       const result = await generateSocialCampaign(input);
       setGeneratedCampaign(result);
-      await recordFeatureUsage(FEATURE_NAMES.SOCIAL_MEDIA_CAMPAIGN_PLANNER);
       toast({ title: "Success", description: "Social media campaign plan generated!" });
       playNotificationSound(soundSettings);
     } catch (error) {

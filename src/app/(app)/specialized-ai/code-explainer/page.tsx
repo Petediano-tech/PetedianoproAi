@@ -12,8 +12,6 @@ import { Code, Sparkles, Loader2, Download, Copy, Terminal, MessageSquare } from
 import { explainCode, type ExplainCodeInput, type ExplainCodeOutput } from '@/ai/flows/explain-code';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
-import Link from 'next/link';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
 
@@ -26,22 +24,9 @@ export default function CodeExplainerPage() {
   const [progressValue, setProgressValue] = useState(0);
   const { soundSettings } = useSoundSettings();
 
-  const showUpgradeToast = () => {
-    toast({
-      title: "Daily Limit Reached",
-      description: "You've used all your free code explanations for today.",
-      variant: "destructive",
-      action: ( <Link href="/vip"> <Button variant="secondary" size="sm">Upgrade to VIP</Button> </Link> ),
-    });
-  };
-
   const handleExplainCode = async () => {
     if (!codeSnippet || !language) {
       toast({ title: "Missing Fields", description: "Please provide both a code snippet and its language.", variant: "destructive" });
-      return;
-    }
-    if (!await canUseFeature(FEATURE_NAMES.CODE_EXPLAINER)) {
-      showUpgradeToast();
       return;
     }
 
@@ -57,7 +42,6 @@ export default function CodeExplainerPage() {
       const input: ExplainCodeInput = { codeSnippet, language };
       const result = await explainCode(input);
       setGeneratedOutput(result);
-      await recordFeatureUsage(FEATURE_NAMES.CODE_EXPLAINER);
       toast({ title: "Success", description: "Code explanation generated!" });
       playNotificationSound(soundSettings);
     } catch (error) {

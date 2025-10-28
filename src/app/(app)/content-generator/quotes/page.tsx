@@ -11,8 +11,6 @@ import Image from "next/image";
 import { getMotivationalQuote, type GetMotivationalQuoteInput, type GetMotivationalQuoteOutput } from '@/ai/flows/get-motivational-quote';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
-import Link from 'next/link';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
 
@@ -25,25 +23,7 @@ export default function QuotesGeneratorPage() {
   const [progress, setProgress] = useState(0);
   const { soundSettings } = useSoundSettings();
 
-  const showUpgradeToast = () => {
-    toast({
-      title: "Daily Limit Reached",
-      description: "You've used all your free quote generations for today.",
-      variant: "destructive",
-      action: (
-        <Link href="/vip">
-          <Button variant="secondary" size="sm">Upgrade to VIP</Button>
-        </Link>
-      ),
-    });
-  };
-
   const handleGenerateQuote = async () => {
-    if (!await canUseFeature(FEATURE_NAMES.QUOTES)) {
-      showUpgradeToast();
-      return;
-    }
-
     setIsLoading(true);
     setProgress(30);
     setGeneratedQuote(null);
@@ -57,7 +37,6 @@ export default function QuotesGeneratorPage() {
       if (result.imageUrl) {
         setGeneratedImage(result.imageUrl);
       }
-      await recordFeatureUsage(FEATURE_NAMES.QUOTES);
       toast({ title: "Success", description: "Quote generated successfully!" });
       playNotificationSound(soundSettings);
     } catch (error) {

@@ -13,8 +13,6 @@ import { Video, Sparkles, Loader2, Download, Copy, Film, Users, Clock, AlignLeft
 import { generateVideoScript, type GenerateVideoScriptInput, type GenerateVideoScriptOutput, type Scene } from '@/ai/flows/generate-video-script';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
-import Link from 'next/link';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
 
@@ -35,27 +33,9 @@ export default function VideoScriptGeneratorPage() {
   const [progressValue, setProgressValue] = useState(0);
   const { soundSettings } = useSoundSettings();
 
-  const showUpgradeToast = () => {
-    toast({
-      title: "Daily Limit Reached",
-      description: "You've used all your free video script generations for today.",
-      variant: "destructive",
-      action: (
-        <Link href="/vip">
-          <Button variant="secondary" size="sm">Upgrade to VIP</Button>
-        </Link>
-      ),
-    });
-  };
-
   const handleGenerateScript = async () => {
     if (!topic || !videoStyle || !targetAudience || !estimatedDuration || !tone) {
       toast({ title: "Missing Fields", description: "Please fill in all required fields.", variant: "destructive" });
-      return;
-    }
-
-    if (!await canUseFeature(FEATURE_NAMES.VIDEO_SCRIPT_GENERATOR)) {
-      showUpgradeToast();
       return;
     }
 
@@ -78,7 +58,6 @@ export default function VideoScriptGeneratorPage() {
       };
       const result = await generateVideoScript(input);
       setGeneratedScript(result);
-      await recordFeatureUsage(FEATURE_NAMES.VIDEO_SCRIPT_GENERATOR);
       toast({ title: "Success", description: "Video script generated successfully!" });
       playNotificationSound(soundSettings);
     } catch (error) {

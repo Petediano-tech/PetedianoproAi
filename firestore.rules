@@ -1,0 +1,166 @@
+/**
+ * @fileoverview Firestore Security Rules for Petediano Pro.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model. Each user has full control
+ * over their own data, stored under their unique user ID. No cross-user access
+ * is permitted except where explicitly noted.
+ *
+ * Data Structure:
+ * All user data is nested under `/users/{userId}`. This includes user accounts,
+ * generated content, user settings, and device data. This structure ensures clear
+ * ownership and simplifies security rules.
+ *
+ * Key Security Decisions:
+ * - User listing is not permitted.
+ * - All write operations require a verified user identity (`request.auth != null`).
+ * - Data consistency between the path and the document's internal fields is enforced
+ *   on create and update operations.
+ *
+ * Denormalization for Authorization:
+ * The `userAccountId` field is denormalized into the `GeneratedContent`,
+ * `UserSetting`, and `DeviceData` entities to avoid costly `get()` calls
+ * in security rules and enforce owner-only access.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Enforces user-ownership for user accounts.
+     * @path /users/{userAccountId}
+     * @allow (create) - Authenticated user creates their own account with matching user ID.
+     * @allow (get) - Authenticated user reads their own account.
+     * @allow (update) - Authenticated user updates their own account.
+     * @allow (delete) - Authenticated user deletes their own account.
+     * @deny (create) - Unauthenticated user attempts to create an account.
+     * @deny (create) - Authenticated user attempts to create an account with a mismatched user ID.
+     * @deny (get) - Authenticated user attempts to read another user's account.
+     * @deny (update) - Authenticated user attempts to update another user's account.
+     * @deny (delete) - Authenticated user attempts to delete another user's account.
+     * @deny (list) - Any user attempts to list all user accounts.
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userAccountId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userAccountId);
+      allow list: if false;
+      allow create: if isSignedIn() && isOwner(userAccountId) && request.resource.data.id == userAccountId;
+      allow update: if isExistingOwner(userAccountId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userAccountId);
+    }
+
+    /**
+     * @description Enforces user-ownership for generated content.
+     * @path /users/{userAccountId}/generated_content/{generatedContentId}
+     * @allow (create) - Authenticated user creates content under their account with matching user ID.
+     * @allow (get) - Authenticated user reads content under their account.
+     * @allow (update) - Authenticated user updates content under their account.
+     * @allow (delete) - Authenticated user deletes content under their account.
+     * @deny (create) - Unauthenticated user attempts to create content.
+     * @deny (create) - Authenticated user attempts to create content with a mismatched user ID.
+     * @deny (get) - Authenticated user attempts to read content from another user's account.
+     * @deny (update) - Authenticated user attempts to update content from another user's account.
+     * @deny (delete) - Authenticated user attempts to delete content from another user's account.
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userAccountId}/generated_content/{generatedContentId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userAccountId);
+      allow list: if isOwner(userAccountId);
+      allow create: if isSignedIn() && isOwner(userAccountId) && request.resource.data.userAccountId == userAccountId;
+      allow update: if isExistingOwner(userAccountId) && request.resource.data.userAccountId == resource.data.userAccountId;
+      allow delete: if isExistingOwner(userAccountId);
+    }
+
+    /**
+     * @description Enforces user-ownership for user settings.
+     * @path /users/{userAccountId}/user_settings/{userSettingId}
+     * @allow (create) - Authenticated user creates settings under their account with matching user ID.
+     * @allow (get) - Authenticated user reads settings under their account.
+     * @allow (update) - Authenticated user updates settings under their account.
+     * @allow (delete) - Authenticated user deletes settings under their account.
+     * @deny (create) - Unauthenticated user attempts to create settings.
+     * @deny (create) - Authenticated user attempts to create settings with a mismatched user ID.
+     * @deny (get) - Authenticated user attempts to read settings from another user's account.
+     * @deny (update) - Authenticated user attempts to update settings from another user's account.
+     * @deny (delete) - Authenticated user attempts to delete settings from another user's account.
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userAccountId}/user_settings/{userSettingId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userAccountId);
+      allow list: if isOwner(userAccountId);
+      allow create: if isSignedIn() && isOwner(userAccountId) && request.resource.data.userAccountId == userAccountId;
+      allow update: if isExistingOwner(userAccountId) && request.resource.data.userAccountId == resource.data.userAccountId;
+      allow delete: if isExistingOwner(userAccountId);
+    }
+
+    /**
+     * @description Enforces user-ownership for device data.
+     * @path /users/{userAccountId}/device_data/{deviceDataId}
+     * @allow (create) - Authenticated user creates device data under their account with matching user ID.
+     * @allow (get) - Authenticated user reads device data under their account.
+     * @allow (update) - Authenticated user updates device data under their account.
+     * @allow (delete) - Authenticated user deletes device data under their account.
+     * @deny (create) - Unauthenticated user attempts to create device data.
+     * @deny (create) - Authenticated user attempts to create device data with a mismatched user ID.
+     * @deny (get) - Authenticated user attempts to read device data from another user's account.
+     * @deny (update) - Authenticated user attempts to update device data from another user's account.
+     * @deny (delete) - Authenticated user attempts to delete device data from another user's account.
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userAccountId}/device_data/{deviceDataId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userAccountId);
+      allow list: if isOwner(userAccountId);
+      allow create: if isSignedIn() && isOwner(userAccountId) && request.resource.data.userAccountId == userAccountId;
+      allow update: if isExistingOwner(userAccountId) && request.resource.data.userAccountId == resource.data.userAccountId;
+      allow delete: if isExistingOwner(userAccountId);
+    }
+  }
+}

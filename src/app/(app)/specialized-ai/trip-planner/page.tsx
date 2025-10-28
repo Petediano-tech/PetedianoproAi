@@ -11,8 +11,6 @@ import { Map, Sparkles, Loader2, Download, Copy, Calendar, Plane } from "lucide-
 import { generateTripPlan, type GenerateTripPlanInput, type GenerateTripPlanOutput } from '@/ai/flows/generate-trip-plan';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
-import Link from 'next/link';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
 import { Slider } from '@/components/ui/slider';
@@ -27,22 +25,9 @@ export default function TripPlannerPage() {
   const [progressValue, setProgressValue] = useState(0);
   const { soundSettings } = useSoundSettings();
 
-  const showUpgradeToast = () => {
-    toast({
-      title: "Daily Limit Reached",
-      description: "You've used all your free itinerary generations for today.",
-      variant: "destructive",
-      action: ( <Link href="/vip"> <Button variant="secondary" size="sm">Upgrade to VIP</Button> </Link> ),
-    });
-  };
-
   const handleGeneratePlan = async () => {
     if (!destination || !interests) {
       toast({ title: "Missing Fields", description: "Please enter a destination and some interests.", variant: "destructive" });
-      return;
-    }
-    if (!await canUseFeature(FEATURE_NAMES.TRIP_PLANNER)) {
-      showUpgradeToast();
       return;
     }
 
@@ -58,7 +43,6 @@ export default function TripPlannerPage() {
       const input: GenerateTripPlanInput = { destination, lengthInDays: lengthInDays[0], interests };
       const result = await generateTripPlan(input);
       setGeneratedPlan(result);
-      await recordFeatureUsage(FEATURE_NAMES.TRIP_PLANNER);
       toast({ title: "Success", description: "Trip itinerary generated!" });
       playNotificationSound(soundSettings);
     } catch (error) {

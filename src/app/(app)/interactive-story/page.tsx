@@ -14,8 +14,6 @@ import {
 } from '@/ai/flows/generate-interactive-story';
 import { generateStoryImage, type GenerateStoryImageInput } from '@/ai/flows/generate-story-with-images';
 import { toast } from '@/hooks/use-toast';
-import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
-import Link from 'next/link';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -46,22 +44,10 @@ export default function InteractiveStoryPage() {
     }
   }, [storyHistory, currentScene]);
 
-  const showUpgradeToast = () => {
-    toast({
-      title: "Daily Limit Reached",
-      description: "You've used all your free story generations for today.",
-      variant: "destructive",
-      action: ( <Link href="/vip"> <Button variant="secondary" size="sm">Upgrade to VIP</Button> </Link> ),
-    });
-  };
-
   const handleStartStory = async () => {
     if (!topic) {
       toast({ title: "Missing Topic", description: "Please enter a topic to start your story.", variant: "destructive" });
       return;
-    }
-    if (!await canUseFeature(FEATURE_NAMES.INTERACTIVE_STORY_GENERATOR)) {
-      showUpgradeToast(); return;
     }
 
     setIsLoading(true);
@@ -72,7 +58,6 @@ export default function InteractiveStoryPage() {
       const result = await startInteractiveStory(input);
       setCurrentScene(result);
       setStoryHistory([{ text: result.text, choice: null, imageUrl: '' }]);
-      await recordFeatureUsage(FEATURE_NAMES.INTERACTIVE_STORY_GENERATOR);
       playNotificationSound(soundSettings);
       generateImageForScene(0, result.imageDescription);
     } catch (error) {
@@ -85,10 +70,6 @@ export default function InteractiveStoryPage() {
   };
 
   const handleChoice = async (choice: string) => {
-    if (!await canUseFeature(FEATURE_NAMES.INTERACTIVE_STORY_GENERATOR)) {
-      showUpgradeToast(); return;
-    }
-    
     setIsLoading(true);
     
     // Finalize the current scene in history
@@ -104,7 +85,6 @@ export default function InteractiveStoryPage() {
       setCurrentScene(result);
       // Add the new scene to history
       setStoryHistory([...previousHistory, finalizedScene, { text: result.text, choice: null, imageUrl: '' }]);
-      await recordFeatureUsage(FEATURE_NAMES.INTERACTIVE_STORY_GENERATOR);
       playNotificationSound(soundSettings);
       generateImageForScene(storyHistory.length, result.imageDescription);
     } catch (error) {
@@ -118,9 +98,6 @@ export default function InteractiveStoryPage() {
   const generateImageForScene = async (index: number, imageDescription: string) => {
     setIsImageLoading(true);
     try {
-        if (!await canUseFeature(FEATURE_NAMES.PICTURE_GENERATOR)) {
-            showUpgradeToast(); return;
-        }
         const input: GenerateStoryImageInput = { imageDescription };
         const result = await generateStoryImage(input);
         
@@ -131,7 +108,6 @@ export default function InteractiveStoryPage() {
             }
             return newHistory;
         });
-        await recordFeatureUsage(FEATURE_NAMES.PICTURE_GENERATOR);
     } catch (error) {
         console.error(`Error generating image for scene ${index + 1}:`, error);
         toast({ title: `Image Generation Failed`, description: `Could not create an image for the latest scene.`, variant: "destructive" });

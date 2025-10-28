@@ -12,8 +12,6 @@ import { Users, Sparkles, Loader2, Download, Copy, Shield, HeartCrack, Palette a
 import { generateCharacterPersona, type GenerateCharacterPersonaInput, type GenerateCharacterPersonaOutput } from '@/ai/flows/generate-character-persona';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { canUseFeature, recordFeatureUsage, FEATURE_NAMES } from '@/lib/usage-limiter';
-import Link from 'next/link';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
 import { Badge } from '@/components/ui/badge';
@@ -29,23 +27,9 @@ export default function CharacterPersonaGeneratorPage() {
   const [progressValue, setProgressValue] = useState(0);
   const { soundSettings } = useSoundSettings();
 
-  const showUpgradeToast = () => {
-    toast({
-      title: "Daily Limit Reached",
-      description: "You've used all your free persona generations for today.",
-      variant: "destructive",
-      action: ( <Link href="/vip"> <Button variant="secondary" size="sm">Upgrade to VIP</Button> </Link> ),
-    });
-  };
-
   const handleGeneratePersona = async () => {
     if (!archetype) {
       toast({ title: "Missing Field", description: "Please provide a character archetype or role.", variant: "destructive" });
-      return;
-    }
-
-    if (!await canUseFeature(FEATURE_NAMES.CHARACTER_PERSONA_GENERATOR)) {
-      showUpgradeToast();
       return;
     }
 
@@ -61,7 +45,6 @@ export default function CharacterPersonaGeneratorPage() {
       const input: GenerateCharacterPersonaInput = { archetype, keyTraits, setting, customPrompt };
       const result = await generateCharacterPersona(input);
       setGeneratedPersona(result);
-      await recordFeatureUsage(FEATURE_NAMES.CHARACTER_PERSONA_GENERATOR);
       toast({ title: "Success", description: "Character persona generated!" });
       playNotificationSound(soundSettings);
     } catch (error) {
