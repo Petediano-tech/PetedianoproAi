@@ -1,6 +1,8 @@
 
 "use client";
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { NavLinks } from '@/components/layout/NavLinks';
 import {
@@ -14,40 +16,31 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { LogOut, Loader2 } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '@/components/icons/Logo';
 import { GlobalLoadingIndicator } from '@/components/layout/GlobalLoadingIndicator';
-import { useAuth } from '@/context/AuthProvider';
-import { usePathname } from 'next/navigation';
-
-const AUTH_PAGES = ['/login', '/signup', '/forgot-password', '/'];
 
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading, logout } = useAuth();
-  const pathname = usePathname();
+  const router = useRouter();
 
-  if (AUTH_PAGES.includes(pathname)) {
-    return <>{children}</>;
-  }
-  
-  if (loading) {
-     return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-16 w-16 animate-spin text-primary" />
-      </div>
-    );
-  }
+  useEffect(() => {
+    // This is a simple, insecure client-side check.
+    // For a real app, a proper JWT-based session is needed.
+    const isAdmin = sessionStorage.getItem('isAdmin') === 'true';
+    if (!isAdmin) {
+      router.replace('/');
+    }
+  }, [router]);
 
-  if (!user) {
-    // This part should technically not be reached due to the AuthProvider redirect,
-    // but it's a good failsafe.
-    return null; 
-  }
+  const handleLogout = () => {
+    sessionStorage.removeItem('isAdmin');
+    router.push('/');
+  };
 
   return (
     <SidebarProvider defaultOpen>
@@ -70,7 +63,7 @@ export default function AppLayout({
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter className="p-4 border-t border-sidebar-border">
-             <Button onClick={logout} variant="ghost" className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center">
+             <Button onClick={handleLogout} variant="ghost" className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center">
                 <LogOut className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
                 <span className="group-data-[collapsible=icon]:hidden">Logout</span>
               </Button>

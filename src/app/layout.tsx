@@ -7,7 +7,6 @@ import { OnlineStatusProvider } from '@/context/OnlineStatusProvider';
 import { FontProvider } from '@/components/providers/FontProvider';
 import { AccessibilityProvider } from '@/context/AccessibilityProvider';
 import { AVAILABLE_FONTS } from '@/lib/fonts.config';
-import { AuthProvider } from '@/context/AuthProvider'; // Import AuthProvider
 
 export const metadata: Metadata = {
   title: 'Petediano Pro',
@@ -49,7 +48,6 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
         >
-          <AuthProvider>
             <FontProvider>
               <AccessibilityProvider>
                 <OnlineStatusProvider>
@@ -57,7 +55,6 @@ export default function RootLayout({
                 </OnlineStatusProvider>
               </AccessibilityProvider>
             </FontProvider>
-          </AuthProvider>
           <Toaster />
         </ThemeProvider>
       </body>
