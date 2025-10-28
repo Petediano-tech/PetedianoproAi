@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, LogOut, Settings, User } from 'lucide-react';
 import { Logo } from '@/components/icons/Logo';
-import { ModeToggle } from '@/components/ui/mode-toggle';
+import { ModeToggle } from '@/components/ModeToggle';
 import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
@@ -97,4 +97,3 @@ export function AppHeader() {
     </header>
   );
 }
-
