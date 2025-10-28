@@ -13,7 +13,7 @@ import { useFontTheme } from "@/hooks/useFontTheme";
 import { AVAILABLE_FONTS } from "@/lib/fonts.config";
 import { useAccessibility } from "@/hooks/useAccessibility";
 import { useUser, useAuth, useFirestore } from '@/firebase';
-import { updateProfile, updateEmail, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
+import { updateProfile, updateEmail, reauthenticateWithCredential, EmailAuthProvider, sendPasswordResetEmail } from 'firebase/auth';
 import { toast } from '@/hooks/use-toast';
 import { useState } from "react";
 import { Loader2, Palette, Type, Music, Accessibility, User, KeyRound, Bell } from "lucide-react";
@@ -165,7 +165,7 @@ export default function SettingsPage() {
             <CardTitle className="flex items-center"><KeyRound className="mr-2 h-5 w-5 text-accent"/> Account Management</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col sm:flex-row gap-4">
-             <Button variant="outline" onClick={() => auth.sendPasswordResetEmail(user?.email || '')
+             <Button variant="outline" onClick={() => sendPasswordResetEmail(auth, user?.email || '')
                 .then(() => toast({title: "Password Reset Email Sent"}))
                 .catch(() => toast({title: "Error", variant: "destructive"}))
              }>

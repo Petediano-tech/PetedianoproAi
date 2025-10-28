@@ -76,7 +76,9 @@ export function playWinSound(settings: Pick<SoundSettings, 'isGlobalMuted' | 'gl
         osc.frequency.setValueAtTime(tone, startTime);
         
         const env = context.createGain();
-        env.connect(masterGainNode);
+        if (masterGainNode) {
+          env.connect(masterGainNode);
+        }
         
         env.gain.setValueAtTime(0, startTime);
         env.gain.linearRampToValueAtTime(0.15, startTime + 0.01);

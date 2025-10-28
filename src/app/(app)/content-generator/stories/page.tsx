@@ -137,11 +137,11 @@ export default function StoryGeneratorPage() {
       let y = margin;
 
       doc.setFontSize(22);
-      doc.setFont(undefined, 'bold');
+      doc.setFont('helvetica', 'bold');
       const titleLines = doc.splitTextToSize(story.title, maxLineWidth);
       doc.text(titleLines, pageWidth / 2, y, { align: 'center' });
       y += (doc.getTextDimensions(titleLines).h) + 10;
-      doc.setFont(undefined, 'normal');
+      doc.setFont('helvetica', 'normal');
 
       for (const page of story.pages) {
          if (y > margin) {

@@ -1,10 +1,10 @@
 
-import {genkit, GenkitPlugin} from 'genkit';
+import {genkit} from 'genkit';
 
 // Conditionally require the plugin only on the server-side.
 // This prevents server-only dependencies like 'async_hooks' from being
 // bundled into the client-side code, which was causing the build to fail.
-let plugins: GenkitPlugin[] = [];
+let plugins: any[] = [];
 if (typeof window === 'undefined') {
   const {googleAI} = require('@genkit-ai/google-genai');
   plugins.push(googleAI());
