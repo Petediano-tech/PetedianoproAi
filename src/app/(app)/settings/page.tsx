@@ -12,7 +12,7 @@ import { useSoundSettings } from "@/hooks/useSoundSettings";
 import { useFontTheme } from "@/hooks/useFontTheme";
 import { AVAILABLE_FONTS } from "@/lib/fonts.config";
 import { useAccessibility } from "@/hooks/useAccessibility";
-import { useUser, useAuth } from "@/firebase";
+import { useUser, useAuth } from '@/firebase';
 import { updateProfile, updateEmail, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { toast } from '@/hooks/use-toast';
 import { useState } from "react";
