@@ -1,4 +1,3 @@
-
 "use client";
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, Sparkles, BookOpen, Download, Loader2, Copy, ImageIcon, BookText } from "lucide-react";
+import { FileText, Sparkles, BookOpen, Download, Loader2, Copy, ImageIcon, BookText, Share2 } from "lucide-react";
 import Image from "next/image";
 import { 
   generateStoryText, type GenerateStoryTextInput,
@@ -17,6 +16,9 @@ import { toast } from '@/hooks/use-toast';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
 import jsPDF from 'jspdf';
+import { useFirestore } from '@/firebase';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, serverTimestamp } from 'firebase/firestore';
 
 interface PageState {
   text: string;
@@ -40,6 +42,7 @@ export default function StoryGeneratorPage() {
   const [isDownloading, setIsDownloading] = useState(false);
   
   const { soundSettings } = useSoundSettings();
+  const firestore = useFirestore();
 
   const handleGenerateStoryText = async () => {
     if (!topic) {
@@ -99,6 +102,26 @@ export default function StoryGeneratorPage() {
     toast({ title: "Image Generation Complete" });
     setIsBatchImageLoading(false);
   };
+  
+    const handleShareToCommunity = () => {
+    if (!story || !firestore) {
+      toast({ title: "Error", description: "Please generate a story first.", variant: "destructive" });
+      return;
+    }
+    
+    const galleryItemsRef = collection(firestore, 'galleryItems');
+    addDocumentNonBlocking(galleryItemsRef, {
+      type: 'story',
+      title: story.title,
+      author: 'Anonymous',
+      likes: 0,
+      content: story.pages.map(p => p.text).join('\n\n'),
+      createdAt: serverTimestamp(),
+    });
+
+    toast({ title: "Shared!", description: "Your story has been shared with the community." });
+  };
+
 
   const handleDownloadPdf = async () => {
     if (!story) return;
@@ -270,6 +293,9 @@ export default function StoryGeneratorPage() {
                   ))}
                 </ScrollArea>
                 <CardFooter className="flex flex-wrap gap-2 justify-center pt-4 border-t">
+                   <Button onClick={handleShareToCommunity} variant="outline" disabled={isDownloading}>
+                    <Share2 className="mr-2 h-4 w-4" /> Share to Community
+                  </Button>
                   <Button onClick={handleCopyStory} variant="outline" disabled={isDownloading}>
                     <Copy className="mr-2 h-4 w-4" /> Copy Story Text
                   </Button>

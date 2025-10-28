@@ -1,4 +1,3 @@
-
 "use client";
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,9 @@ import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
+import { useFirestore } from '@/firebase';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, serverTimestamp } from 'firebase/firestore';
 
 const imageTypes = ["picture", "wallpaper", "logo", "flyer", "collage", "social media post"];
 const aspectRatios = ["16:9", "1:1", "4:5", "9:16", "4:3", "3:4"];
@@ -31,6 +33,7 @@ export default function PictureGeneratorPage() {
   const [progress, setProgress] = useState(0);
 
   const { soundSettings } = useSoundSettings();
+  const firestore = useFirestore();
 
   const handleGeneratePicture = async () => {
     if (!promptText) {
@@ -64,6 +67,27 @@ export default function PictureGeneratorPage() {
       setTimeout(() => setProgress(0), 1500);
     }
   };
+
+  const handleShareToCommunity = () => {
+    if (!generatedImageUrl || !firestore) {
+      toast({ title: "Error", description: "Please generate an image first.", variant: "destructive" });
+      return;
+    }
+    
+    const galleryItemsRef = collection(firestore, 'galleryItems');
+    addDocumentNonBlocking(galleryItemsRef, {
+      type: 'image',
+      title: promptText,
+      author: 'Anonymous', // In a real app, you'd get the current user's name
+      likes: 0,
+      url: generatedImageUrl,
+      dataAiHint: promptText.split(' ').slice(0, 2).join(' '),
+      createdAt: serverTimestamp(),
+    });
+
+    toast({ title: "Shared!", description: "Your creation has been shared with the community." });
+  };
+
 
   const handleShare = async () => {
     if (!generatedImageUrl || !promptText) {
@@ -174,7 +198,8 @@ export default function PictureGeneratorPage() {
                   <Image src={generatedImageUrl} alt="Generated picture" layout="fill" objectFit="contain" data-ai-hint="generated image art" />
                 </div>
                 <div className="flex flex-wrap gap-2 justify-center">
-                  <Button variant="outline" onClick={handleShare}><Share2 className="mr-2 h-4 w-4" /> Share</Button>
+                  <Button variant="outline" onClick={handleShareToCommunity}><Share2 className="mr-2 h-4 w-4" /> Share to Community</Button>
+                  <Button variant="outline" onClick={handleShare}><Share2 className="mr-2 h-4 w-4" /> Share Externally</Button>
                   <Button asChild>
                     <a href={generatedImageUrl} download={`petediano_pro_art_${Date.now()}.png`}>
                       <Download className="mr-2 h-5 w-5" /> Download

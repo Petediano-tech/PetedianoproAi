@@ -1,165 +1,169 @@
 /**
- * @fileoverview Firestore Security Rules for Petediano Pro.
- *
- * Core Philosophy:
- * This ruleset enforces a strict user-ownership model. Each user has full control
- * over their own data, stored under their unique user ID. No cross-user access
- * is permitted except where explicitly noted.
+ * @file Firestore Security Rules for Petediano Pro
+ * @description This ruleset enforces a strict user-ownership model for all data.
  *
  * Data Structure:
- * All user data is nested under `/users/{userId}`. This includes user accounts,
- * generated content, user settings, and device data. This structure ensures clear
- * ownership and simplifies security rules.
+ * All user-related data is nested under /users/{userId}.
+ *  - /users/{userId}: Stores user account information.
+ *  - /users/{userId}/generated_content/{generatedContentId}: Stores AI-generated content owned by the user.
+ *  - /users/{userId}/user_settings/{userSettingId}: Stores user-specific settings.
+ *  - /users/{userId}/device_data/{deviceDataId}: Stores device-specific data.
  *
  * Key Security Decisions:
- * - User listing is not permitted.
- * - All write operations require a verified user identity (`request.auth != null`).
- * - Data consistency between the path and the document's internal fields is enforced
- *   on create and update operations.
- *
- * Denormalization for Authorization:
- * The `userAccountId` field is denormalized into the `GeneratedContent`,
- * `UserSetting`, and `DeviceData` entities to avoid costly `get()` calls
- * in security rules and enforce owner-only access.
+ * - All write operations (create, update, delete) require the user to be the owner of the data.
+ * - Read operations (get, list) are also restricted to the owner.
+ * - Data consistency is enforced by validating the 'userAccountId' field on create and update operations.
+ * - No public data or shared access is permitted in this initial configuration.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Enforces user-ownership for user accounts.
+     * @description Manages user account information. Only the user can read and write their own account data.
      * @path /users/{userAccountId}
-     * @allow (create) - Authenticated user creates their own account with matching user ID.
-     * @allow (get) - Authenticated user reads their own account.
-     * @allow (update) - Authenticated user updates their own account.
-     * @allow (delete) - Authenticated user deletes their own account.
-     * @deny (create) - Unauthenticated user attempts to create an account.
-     * @deny (create) - Authenticated user attempts to create an account with a mismatched user ID.
-     * @deny (get) - Authenticated user attempts to read another user's account.
-     * @deny (update) - Authenticated user attempts to update another user's account.
-     * @deny (delete) - Authenticated user attempts to delete another user's account.
-     * @deny (list) - Any user attempts to list all user accounts.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) User with ID 'user123' can create a document with id == user123.
+     * @deny (create) User with ID 'user456' cannot create a document with id == user123.
+     * @allow (get, update, delete) User with ID 'user123' can read/update/delete their own document.
+     * @deny (get, update, delete) User with ID 'user456' cannot read/update/delete document with ID 'user123'.
+     * @principle Enforces document ownership.
      */
     match /users/{userAccountId} {
+      // Helper function to check if the user is signed in and owns the account.
       function isSignedIn() {
         return request.auth != null;
       }
 
-      function isOwner(userId) {
-        return request.auth.uid == userId;
+      function isOwner(userAccountId) {
+        return isSignedIn() && request.auth.uid == userAccountId;
       }
 
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+      function isExistingOwner(userAccountId) {
+        return isOwner(userAccountId) && resource != null;
       }
 
+      // Only the user can create their own account.
+      allow create: if isOwner(userAccountId) && request.resource.data.id == userAccountId;
+
+      // Only the owner can read their account information.
       allow get: if isOwner(userAccountId);
       allow list: if false;
-      allow create: if isSignedIn() && isOwner(userAccountId) && request.resource.data.id == userAccountId;
+
+      // Only the owner can update their account information. Enforce immutability of id.
       allow update: if isExistingOwner(userAccountId) && request.resource.data.id == resource.data.id;
+
+      // Only the owner can delete their account.
       allow delete: if isExistingOwner(userAccountId);
     }
 
     /**
-     * @description Enforces user-ownership for generated content.
+     * @description Manages content generated by the AI for a specific user.
      * @path /users/{userAccountId}/generated_content/{generatedContentId}
-     * @allow (create) - Authenticated user creates content under their account with matching user ID.
-     * @allow (get) - Authenticated user reads content under their account.
-     * @allow (update) - Authenticated user updates content under their account.
-     * @allow (delete) - Authenticated user deletes content under their account.
-     * @deny (create) - Unauthenticated user attempts to create content.
-     * @deny (create) - Authenticated user attempts to create content with a mismatched user ID.
-     * @deny (get) - Authenticated user attempts to read content from another user's account.
-     * @deny (update) - Authenticated user attempts to update content from another user's account.
-     * @deny (delete) - Authenticated user attempts to delete content from another user's account.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) User with ID 'user123' can create content under /users/user123/generated_content/.
+     * @deny (create) User with ID 'user456' cannot create content under /users/user123/generated_content/.
+     * @allow (get, update, delete) User with ID 'user123' can manage content under /users/user123/generated_content/.
+     * @deny (get, update, delete) User with ID 'user456' cannot manage content under /users/user123/generated_content/.
+     * @principle Enforces document ownership for writes, restricts reads to owner.
      */
     match /users/{userAccountId}/generated_content/{generatedContentId} {
+      // Helper function to check if the user is signed in and owns the content.
       function isSignedIn() {
         return request.auth != null;
       }
 
-      function isOwner(userId) {
-        return request.auth.uid == userId;
+      function isOwner(userAccountId) {
+        return isSignedIn() && request.auth.uid == userAccountId;
       }
 
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+       function isExistingOwner(userAccountId) {
+        return isOwner(userAccountId) && resource != null;
       }
 
+      // Only the user can create content under their account. Validate userAccountId on create.
+      allow create: if isOwner(userAccountId) && request.resource.data.userAccountId == userAccountId;
+
+      // Only the owner can read their generated content.
       allow get: if isOwner(userAccountId);
       allow list: if isOwner(userAccountId);
-      allow create: if isSignedIn() && isOwner(userAccountId) && request.resource.data.userAccountId == userAccountId;
+
+      // Only the owner can update their generated content. Enforce immutability of userAccountId.
       allow update: if isExistingOwner(userAccountId) && request.resource.data.userAccountId == resource.data.userAccountId;
+
+      // Only the owner can delete their generated content.
       allow delete: if isExistingOwner(userAccountId);
     }
 
     /**
-     * @description Enforces user-ownership for user settings.
+     * @description Manages user-specific settings.
      * @path /users/{userAccountId}/user_settings/{userSettingId}
-     * @allow (create) - Authenticated user creates settings under their account with matching user ID.
-     * @allow (get) - Authenticated user reads settings under their account.
-     * @allow (update) - Authenticated user updates settings under their account.
-     * @allow (delete) - Authenticated user deletes settings under their account.
-     * @deny (create) - Unauthenticated user attempts to create settings.
-     * @deny (create) - Authenticated user attempts to create settings with a mismatched user ID.
-     * @deny (get) - Authenticated user attempts to read settings from another user's account.
-     * @deny (update) - Authenticated user attempts to update settings from another user's account.
-     * @deny (delete) - Authenticated user attempts to delete settings from another user's account.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) User with ID 'user123' can create settings under /users/user123/user_settings/.
+     * @deny (create) User with ID 'user456' cannot create settings under /users/user123/user_settings/.
+     * @allow (get, update, delete) User with ID 'user123' can manage settings under /users/user123/user_settings/.
+     * @deny (get, update, delete) User with ID 'user456' cannot manage settings under /users/user123/user_settings/.
+     * @principle Enforces document ownership for writes, restricts reads to owner.
      */
     match /users/{userAccountId}/user_settings/{userSettingId} {
+      // Helper function to check if the user is signed in and owns the settings.
       function isSignedIn() {
         return request.auth != null;
       }
 
-      function isOwner(userId) {
-        return request.auth.uid == userId;
+      function isOwner(userAccountId) {
+        return isSignedIn() && request.auth.uid == userAccountId;
       }
 
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+       function isExistingOwner(userAccountId) {
+        return isOwner(userAccountId) && resource != null;
       }
 
+      // Only the user can create settings under their account. Validate userAccountId on create.
+      allow create: if isOwner(userAccountId) && request.resource.data.userAccountId == userAccountId;
+
+      // Only the owner can read their user settings.
       allow get: if isOwner(userAccountId);
       allow list: if isOwner(userAccountId);
-      allow create: if isSignedIn() && isOwner(userAccountId) && request.resource.data.userAccountId == userAccountId;
+
+      // Only the owner can update their user settings. Enforce immutability of userAccountId.
       allow update: if isExistingOwner(userAccountId) && request.resource.data.userAccountId == resource.data.userAccountId;
+
+      // Only the owner can delete their user settings.
       allow delete: if isExistingOwner(userAccountId);
     }
 
     /**
-     * @description Enforces user-ownership for device data.
+     * @description Manages device-specific data.
      * @path /users/{userAccountId}/device_data/{deviceDataId}
-     * @allow (create) - Authenticated user creates device data under their account with matching user ID.
-     * @allow (get) - Authenticated user reads device data under their account.
-     * @allow (update) - Authenticated user updates device data under their account.
-     * @allow (delete) - Authenticated user deletes device data under their account.
-     * @deny (create) - Unauthenticated user attempts to create device data.
-     * @deny (create) - Authenticated user attempts to create device data with a mismatched user ID.
-     * @deny (get) - Authenticated user attempts to read device data from another user's account.
-     * @deny (update) - Authenticated user attempts to update device data from another user's account.
-     * @deny (delete) - Authenticated user attempts to delete device data from another user's account.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) User with ID 'user123' can create device data under /users/user123/device_data/.
+     * @deny (create) User with ID 'user456' cannot create device data under /users/user123/device_data/.
+     * @allow (get, update, delete) User with ID 'user123' can manage device data under /users/user123/device_data/.
+     * @deny (get, update, delete) User with ID 'user456' cannot manage device data under /users/user123/device_data/.
+     * @principle Enforces document ownership for writes, restricts reads to owner.
      */
     match /users/{userAccountId}/device_data/{deviceDataId} {
+      // Helper function to check if the user is signed in and owns the device data.
       function isSignedIn() {
         return request.auth != null;
       }
 
-      function isOwner(userId) {
-        return request.auth.uid == userId;
+      function isOwner(userAccountId) {
+        return isSignedIn() && request.auth.uid == userAccountId;
       }
 
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+       function isExistingOwner(userAccountId) {
+        return isOwner(userAccountId) && resource != null;
       }
 
+      // Only the user can create device data under their account. Validate userAccountId on create.
+      allow create: if isOwner(userAccountId) && request.resource.data.userAccountId == userAccountId;
+
+      // Only the owner can read their device data.
       allow get: if isOwner(userAccountId);
       allow list: if isOwner(userAccountId);
-      allow create: if isSignedIn() && isOwner(userAccountId) && request.resource.data.userAccountId == userAccountId;
+
+      // Only the owner can update their device data. Enforce immutability of userAccountId.
       allow update: if isExistingOwner(userAccountId) && request.resource.data.userAccountId == resource.data.userAccountId;
+
+      // Only the owner can delete their device data.
       allow delete: if isExistingOwner(userAccountId);
     }
   }
