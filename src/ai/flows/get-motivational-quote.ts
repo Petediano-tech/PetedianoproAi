@@ -66,13 +66,12 @@ const getMotivationalQuoteFlow = ai.defineFlow(
     } else {
       // If textOnly is false, generate an image with the quote.
       const {media} = await ai.generate({
-        model: 'googleai/gemini-2.0-flash-preview-image-generation',
+        model: 'googleai/imagen-4.0-fast-generate-001',
         prompt: `Generate an image with the following motivational quote on a beautiful, artistic background: "${output!.quote}"`,
-        config: {
-          responseModalities: ['TEXT', 'IMAGE'],
-        },
       });
-
+      if (!media || !media.url) {
+        throw new Error('Image generation failed to return valid data.');
+      }
       return {quote: output!.quote, imageUrl: media.url};
     }
   }

@@ -54,12 +54,12 @@ const generateOriginalPicturesFlow = ai.defineFlow(
     imagePrompt += " Avoid clichés and generate a unique visual.";
 
     const {media} = await ai.generate({
-      model: 'googleai/gemini-2.0-flash-preview-image-generation',
+      model: 'googleai/imagen-4.0-fast-generate-001',
       prompt: imagePrompt,
-      config: {
-        responseModalities: ['TEXT', 'IMAGE'],
-      },
     });
-    return {imageUrl: media.url!};
+    if (!media || !media.url) {
+        throw new Error('Image generation failed to return a valid response.');
+    }
+    return {imageUrl: media.url};
   }
 );

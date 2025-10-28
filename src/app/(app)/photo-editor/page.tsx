@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, Wand2, Trash2, Download, Share2 } from "lucide-react";
 import Image from "next/image";
 import { aiPhotoEnhancer, type AiPhotoEnhancerInput, type AiPhotoEnhancerOutput } from '@/ai/flows/ai-photo-enhancer';
@@ -122,7 +120,7 @@ export default function PhotoEditorPage() {
       <Card className="mb-8">
         <CardHeader>
           <CardTitle className="font-headline text-3xl text-primary">AI Photo Editor</CardTitle>
-          <CardDescription>Upload your photo and let AI enhance it, or manually apply stunning effects and adjustments.</CardDescription>
+          <CardDescription>Upload your photo and let AI automatically enhance it with professional adjustments.</CardDescription>
         </CardHeader>
       </Card>
 
@@ -144,30 +142,6 @@ export default function PhotoEditorPage() {
               <Wand2 className="mr-2 h-5 w-5" /> {isLoading ? "Enhancing..." : "AI Auto Enhance"}
             </Button>
             {isLoading && <Progress value={progress} className="w-full mt-2" />}
-
-            <div className="space-y-4 pt-4 border-t">
-              <h3 className="font-semibold text-lg">Manual Adjustments (Coming Soon)</h3>
-              <div className="space-y-2">
-                <Label>Brightness</Label>
-                <Slider defaultValue={[50]} max={100} step={1} disabled />
-              </div>
-              <div className="space-y-2">
-                <Label>Contrast</Label>
-                <Slider defaultValue={[50]} max={100} step={1} disabled />
-              </div>
-              <div className="space-y-2">
-                <Label>Add Text</Label>
-                <Input placeholder="Enter text" disabled />
-              </div>
-              <div className="space-y-2">
-                 <Label>Font</Label>
-                 <Select disabled>
-                    <SelectTrigger><SelectValue placeholder="Select font" /></SelectTrigger>
-                    <SelectContent><SelectItem value="arial">Arial</SelectItem></SelectContent>
-                 </Select>
-              </div>
-               <Button variant="outline" disabled className="w-full">Remove Background</Button>
-            </div>
           </CardContent>
         </Card>
 

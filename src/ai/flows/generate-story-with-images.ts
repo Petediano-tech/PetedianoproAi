@@ -126,11 +126,8 @@ export async function generateStoryText(
  */
 export async function generateStoryImage(input: GenerateStoryImageInput): Promise<GenerateStoryImageOutput> {
     const {media} = await ai.generate({
-      model: 'googleai/gemini-2.0-flash-preview-image-generation',
+      model: 'googleai/imagen-4.0-fast-generate-001',
       prompt: `Generate an illustration for a story. The scene is: "${input.imageDescription}". The image should be artistic and visually compelling.`,
-      config: {
-        responseModalities: ['TEXT', 'IMAGE'],
-      },
     });
 
     if (!media?.url) {

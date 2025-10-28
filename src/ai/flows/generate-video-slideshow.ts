@@ -58,11 +58,8 @@ export async function generateVideoSlideshow(input: GenerateVideoSlideshowInput)
  */
 async function generateImageForSlide(imageDescription: string): Promise<{ imageUrl: string }> {
     const {media} = await ai.generate({
-      model: 'googleai/gemini-2.0-flash-preview-image-generation',
+      model: 'googleai/imagen-4.0-fast-generate-001',
       prompt: `Generate a visually compelling, cinematic image for a video slideshow. The scene is: "${imageDescription}". Aspect ratio 16:9.`,
-      config: {
-        responseModalities: ['TEXT', 'IMAGE'],
-      },
     });
 
     if (!media?.url) {

@@ -1,3 +1,4 @@
+
 import {genkit, GenkitPlugin} from 'genkit';
 
 // Conditionally require the plugin only on the server-side.
@@ -5,7 +6,7 @@ import {genkit, GenkitPlugin} from 'genkit';
 // bundled into the client-side code, which was causing the build to fail.
 let plugins: GenkitPlugin[] = [];
 if (typeof window === 'undefined') {
-  const {googleAI} = require('@genkit-ai/googleai');
+  const {googleAI} = require('@genkit-ai/google-genai');
   plugins.push(googleAI());
 }
 
