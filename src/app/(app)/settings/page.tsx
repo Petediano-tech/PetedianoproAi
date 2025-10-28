@@ -12,11 +12,12 @@ import { useSoundSettings } from "@/hooks/useSoundSettings";
 import { useFontTheme } from "@/hooks/useFontTheme";
 import { AVAILABLE_FONTS } from "@/lib/fonts.config";
 import { useAccessibility } from "@/hooks/useAccessibility";
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, useFirestore } from '@/firebase';
 import { updateProfile, updateEmail, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { toast } from '@/hooks/use-toast';
 import { useState } from "react";
 import { Loader2, Palette, Type, Music, Accessibility, User, KeyRound, Bell } from "lucide-react";
+import { ProfilePictureUploader } from "@/components/settings/ProfilePictureUploader";
 
 export default function SettingsPage() {
   const { soundSettings, setGlobalMuted, setGlobalVolume } = useSoundSettings();
@@ -24,6 +25,7 @@ export default function SettingsPage() {
   const { textSize, setTextSize } = useAccessibility();
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
 
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -74,26 +76,29 @@ export default function SettingsPage() {
       </Card>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {/* Profile Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center"><User className="mr-2 h-5 w-5 text-accent"/> Profile</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-             {isUserLoading ? <Loader2 className="animate-spin" /> : (
-                 <>
-                    <div><Label htmlFor="displayName">Display Name</Label><Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} /></div>
-                    <div><Label htmlFor="email">Email</Label><Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-                    {email !== user?.email && (
-                         <div><Label htmlFor="currentPassword">Current Password (to change email)</Label><Input id="currentPassword" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} /></div>
+        
+        <Card className="lg:col-span-2">
+            <CardHeader>
+                <CardTitle className="flex items-center"><User className="mr-2 h-5 w-5 text-accent"/> Profile</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <ProfilePictureUploader />
+                 <div className="space-y-4">
+                    {isUserLoading ? <Loader2 className="animate-spin" /> : (
+                        <>
+                            <div><Label htmlFor="displayName">Display Name</Label><Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} /></div>
+                            <div><Label htmlFor="email">Email</Label><Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+                            {email !== user?.email && (
+                                <div><Label htmlFor="currentPassword">Current Password (to change email)</Label><Input id="currentPassword" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} /></div>
+                            )}
+                            <Button onClick={handleProfileUpdate} disabled={isUpdating}>
+                                {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                Update Profile
+                            </Button>
+                        </>
                     )}
-                    <Button onClick={handleProfileUpdate} disabled={isUpdating}>
-                        {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                        Update Profile
-                    </Button>
-                 </>
-             )}
-          </CardContent>
+                 </div>
+            </CardContent>
         </Card>
 
         {/* Theme & Font Settings */}

@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { Logo } from '@/components/icons/Logo';
+import { defaultAvatars } from '@/lib/default-avatars';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
@@ -40,23 +41,27 @@ export default function SignupPage() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-
-      await updateProfile(user, { displayName: name });
       
-      // Create a corresponding user document in Firestore
+      const randomAvatar = defaultAvatars[Math.floor(Math.random() * defaultAvatars.length)];
+
+      await updateProfile(user, { 
+        displayName: name,
+        photoURL: randomAvatar,
+      });
+      
       if (firestore) {
         const userDocRef = doc(firestore, 'users', user.uid);
         setDocumentNonBlocking(userDocRef, {
           uid: user.uid,
           displayName: name,
           email: user.email,
+          photoURL: randomAvatar,
           createdAt: serverTimestamp(),
-          vipStatus: 'free', // 'free', 'monthly', 'quarterly', 'yearly', 'lifetime'
+          vipStatus: 'free',
           lastLogin: serverTimestamp(),
           photoEditorUsage: 0,
           pictureGeneratorUsage: 0,
           storyGeneratorUsage: 0,
-          // Add other feature usages here with an initial value of 0
         }, { merge: true });
       }
 
