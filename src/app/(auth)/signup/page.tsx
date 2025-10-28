@@ -42,6 +42,7 @@ export default function SignupPage() {
 
       await updateProfile(user, { displayName: name });
       
+      // Create a corresponding user document in Firestore
       const userDocRef = doc(firestore, 'users', user.uid);
       setDocumentNonBlocking(userDocRef, {
         uid: user.uid,
@@ -50,11 +51,10 @@ export default function SignupPage() {
         createdAt: serverTimestamp(),
         vipStatus: 'free', // 'free', 'monthly', 'quarterly', 'yearly', 'lifetime'
         lastLogin: serverTimestamp(),
-        // Initialize usage limits
         photoEditorUsage: 0,
         pictureGeneratorUsage: 0,
         storyGeneratorUsage: 0,
-        // ... add other feature usages here
+        // Add other feature usages here with an initial value of 0
       }, { merge: true });
 
 
