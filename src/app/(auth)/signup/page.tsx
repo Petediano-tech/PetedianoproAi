@@ -4,7 +4,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
@@ -43,20 +44,21 @@ export default function SignupPage() {
       await updateProfile(user, { displayName: name });
       
       // Create a corresponding user document in Firestore
-      const userDocRef = doc(firestore, 'users', user.uid);
-      setDocumentNonBlocking(userDocRef, {
-        uid: user.uid,
-        displayName: name,
-        email: user.email,
-        createdAt: serverTimestamp(),
-        vipStatus: 'free', // 'free', 'monthly', 'quarterly', 'yearly', 'lifetime'
-        lastLogin: serverTimestamp(),
-        photoEditorUsage: 0,
-        pictureGeneratorUsage: 0,
-        storyGeneratorUsage: 0,
-        // Add other feature usages here with an initial value of 0
-      }, { merge: true });
-
+      if (firestore) {
+        const userDocRef = doc(firestore, 'users', user.uid);
+        setDocumentNonBlocking(userDocRef, {
+          uid: user.uid,
+          displayName: name,
+          email: user.email,
+          createdAt: serverTimestamp(),
+          vipStatus: 'free', // 'free', 'monthly', 'quarterly', 'yearly', 'lifetime'
+          lastLogin: serverTimestamp(),
+          photoEditorUsage: 0,
+          pictureGeneratorUsage: 0,
+          storyGeneratorUsage: 0,
+          // Add other feature usages here with an initial value of 0
+        }, { merge: true });
+      }
 
       toast({
         title: 'Account Created!',
