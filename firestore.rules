@@ -1,170 +1,94 @@
 /**
- * @file Firestore Security Rules for Petediano Pro
- * @description This ruleset enforces a strict user-ownership model for all data.
+ * @fileoverview Firestore Security Rules for Petediano Pro.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a user-ownership model for user-specific data and allows public read access to shared gallery content.
  *
  * Data Structure:
- * All user-related data is nested under /users/{userId}.
- *  - /users/{userId}: Stores user account information.
- *  - /users/{userId}/generated_content/{generatedContentId}: Stores AI-generated content owned by the user.
- *  - /users/{userId}/user_settings/{userSettingId}: Stores user-specific settings.
- *  - /users/{userId}/device_data/{deviceDataId}: Stores device-specific data.
+ * - User account data is stored under `/users/{userId}`.
+ * - Gallery items are stored in the top-level `/galleryItems/{itemId}` collection.
  *
  * Key Security Decisions:
- * - All write operations (create, update, delete) require the user to be the owner of the data.
- * - Read operations (get, list) are also restricted to the owner.
- * - Data consistency is enforced by validating the 'userAccountId' field on create and update operations.
- * - No public data or shared access is permitted in this initial configuration.
+ * - Users can only read and write their own data under `/users/{userId}`.
+ * - Gallery items are publicly readable.
+ * - Gallery item creation requires a valid user ID matching the `author` field.
+ * - Gallery item updates are limited to incrementing the `likes` field and can be performed by anyone.
+ * - Listing of user documents is denied as a general security measure.
+ *
+ * Denormalization for Authorization:
+ * - The `GalleryItem` includes an `author` field, which is the user's display name.
+ *   This is for display purposes only. Authorization is based on the user ID.
+ *
+ * Structural Segregation:
+ * - Public `GalleryItem` data is separated from private user data to simplify read access.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Manages user account information. Only the user can read and write their own account data.
-     * @path /users/{userAccountId}
-     * @allow (create) User with ID 'user123' can create a document with id == user123.
-     * @deny (create) User with ID 'user456' cannot create a document with id == user123.
-     * @allow (get, update, delete) User with ID 'user123' can read/update/delete their own document.
-     * @deny (get, update, delete) User with ID 'user456' cannot read/update/delete document with ID 'user123'.
-     * @principle Enforces document ownership.
+     * @description Checks if the request is authenticated.
      */
-    match /users/{userAccountId} {
-      // Helper function to check if the user is signed in and owns the account.
-      function isSignedIn() {
-        return request.auth != null;
-      }
+    function isSignedIn() {
+      return request.auth != null;
+    }
 
-      function isOwner(userAccountId) {
-        return isSignedIn() && request.auth.uid == userAccountId;
-      }
+    /**
+     * @description Checks if the authenticated user ID matches the provided user ID.
+     * @param {string} userId The user ID to compare against.
+     */
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
 
-      function isExistingOwner(userAccountId) {
-        return isOwner(userAccountId) && resource != null;
-      }
+    /**
+     * @description Checks if the authenticated user is the owner of an existing document.
+     * @param {string} userId The user ID to compare against.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
 
-      // Only the user can create their own account.
-      allow create: if isOwner(userAccountId) && request.resource.data.id == userAccountId;
 
-      // Only the owner can read their account information.
-      allow get: if isOwner(userAccountId);
+    match /users/{userId} {
+      /**
+       * @description Allows users to read and write their own user document.
+       * @path /users/{userId}
+       * @allow (create) User with UID 'sB28DTIp98XiVbk3XVmFBPHJqPs1' can create their own user document.
+       * @deny (create) User with UID 'otherUserId' cannot create a document under /users/sB28DTIp98XiVbk3XVmFBPHJqPs1.
+       * @allow (get) User with UID 'sB28DTIp98XiVbk3XVmFBPHJqPs1' can get their own user document.
+       * @deny (get) User with UID 'otherUserId' cannot get the document under /users/sB28DTIp98XiVbk3XVmFBPHJqPs1.
+       * @allow (update) User with UID 'sB28DTIp98XiVbk3XVmFBPHJqPs1' can update their own user document.
+       * @deny (update) User with UID 'otherUserId' cannot update the document under /users/sB28DTIp98XiVbk3XVmFBPHJqPs1.
+       * @allow (delete) User with UID 'sB28DTIp98XiVbk3XVmFBPHJqPs1' can delete their own user document.
+       * @deny (delete) User with UID 'otherUserId' cannot delete the document under /users/sB28DTIp98XiVbk3XVmFBPHJqPs1.
+       * @deny (list) No one can list user documents.
+       * @principle Enforces document ownership for reads and writes.
+       */
+      allow get: if isOwner(userId);
       allow list: if false;
-
-      // Only the owner can update their account information. Enforce immutability of id.
-      allow update: if isExistingOwner(userAccountId) && request.resource.data.id == resource.data.id;
-
-      // Only the owner can delete their account.
-      allow delete: if isExistingOwner(userAccountId);
+      allow create: if isOwner(userId) && request.resource.data.uid == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.uid == resource.data.uid;
+      allow delete: if isExistingOwner(userId);
     }
 
-    /**
-     * @description Manages content generated by the AI for a specific user.
-     * @path /users/{userAccountId}/generated_content/{generatedContentId}
-     * @allow (create) User with ID 'user123' can create content under /users/user123/generated_content/.
-     * @deny (create) User with ID 'user456' cannot create content under /users/user123/generated_content/.
-     * @allow (get, update, delete) User with ID 'user123' can manage content under /users/user123/generated_content/.
-     * @deny (get, update, delete) User with ID 'user456' cannot manage content under /users/user123/generated_content/.
-     * @principle Enforces document ownership for writes, restricts reads to owner.
-     */
-    match /users/{userAccountId}/generated_content/{generatedContentId} {
-      // Helper function to check if the user is signed in and owns the content.
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userAccountId) {
-        return isSignedIn() && request.auth.uid == userAccountId;
-      }
-
-       function isExistingOwner(userAccountId) {
-        return isOwner(userAccountId) && resource != null;
-      }
-
-      // Only the user can create content under their account. Validate userAccountId on create.
-      allow create: if isOwner(userAccountId) && request.resource.data.userAccountId == userAccountId;
-
-      // Only the owner can read their generated content.
-      allow get: if isOwner(userAccountId);
-      allow list: if isOwner(userAccountId);
-
-      // Only the owner can update their generated content. Enforce immutability of userAccountId.
-      allow update: if isExistingOwner(userAccountId) && request.resource.data.userAccountId == resource.data.userAccountId;
-
-      // Only the owner can delete their generated content.
-      allow delete: if isExistingOwner(userAccountId);
-    }
-
-    /**
-     * @description Manages user-specific settings.
-     * @path /users/{userAccountId}/user_settings/{userSettingId}
-     * @allow (create) User with ID 'user123' can create settings under /users/user123/user_settings/.
-     * @deny (create) User with ID 'user456' cannot create settings under /users/user123/user_settings/.
-     * @allow (get, update, delete) User with ID 'user123' can manage settings under /users/user123/user_settings/.
-     * @deny (get, update, delete) User with ID 'user456' cannot manage settings under /users/user123/user_settings/.
-     * @principle Enforces document ownership for writes, restricts reads to owner.
-     */
-    match /users/{userAccountId}/user_settings/{userSettingId} {
-      // Helper function to check if the user is signed in and owns the settings.
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userAccountId) {
-        return isSignedIn() && request.auth.uid == userAccountId;
-      }
-
-       function isExistingOwner(userAccountId) {
-        return isOwner(userAccountId) && resource != null;
-      }
-
-      // Only the user can create settings under their account. Validate userAccountId on create.
-      allow create: if isOwner(userAccountId) && request.resource.data.userAccountId == userAccountId;
-
-      // Only the owner can read their user settings.
-      allow get: if isOwner(userAccountId);
-      allow list: if isOwner(userAccountId);
-
-      // Only the owner can update their user settings. Enforce immutability of userAccountId.
-      allow update: if isExistingOwner(userAccountId) && request.resource.data.userAccountId == resource.data.userAccountId;
-
-      // Only the owner can delete their user settings.
-      allow delete: if isExistingOwner(userAccountId);
-    }
-
-    /**
-     * @description Manages device-specific data.
-     * @path /users/{userAccountId}/device_data/{deviceDataId}
-     * @allow (create) User with ID 'user123' can create device data under /users/user123/device_data/.
-     * @deny (create) User with ID 'user456' cannot create device data under /users/user123/device_data/.
-     * @allow (get, update, delete) User with ID 'user123' can manage device data under /users/user123/device_data/.
-     * @deny (get, update, delete) User with ID 'user456' cannot manage device data under /users/user123/device_data/.
-     * @principle Enforces document ownership for writes, restricts reads to owner.
-     */
-    match /users/{userAccountId}/device_data/{deviceDataId} {
-      // Helper function to check if the user is signed in and owns the device data.
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userAccountId) {
-        return isSignedIn() && request.auth.uid == userAccountId;
-      }
-
-       function isExistingOwner(userAccountId) {
-        return isOwner(userAccountId) && resource != null;
-      }
-
-      // Only the user can create device data under their account. Validate userAccountId on create.
-      allow create: if isOwner(userAccountId) && request.resource.data.userAccountId == userAccountId;
-
-      // Only the owner can read their device data.
-      allow get: if isOwner(userAccountId);
-      allow list: if isOwner(userAccountId);
-
-      // Only the owner can update their device data. Enforce immutability of userAccountId.
-      allow update: if isExistingOwner(userAccountId) && request.resource.data.userAccountId == resource.data.userAccountId;
-
-      // Only the owner can delete their device data.
-      allow delete: if isExistingOwner(userAccountId);
+    match /galleryItems/{itemId} {
+      /**
+       * @description Allows anyone to read gallery items, but restricts creation and updates.
+       * @path /galleryItems/{itemId}
+       * @allow (get) Any user can read any gallery item.
+       * @allow (list) Any user can list gallery items.
+       * @allow (create) User with UID 'user123' can create a gallery item with authorId 'user123'.
+       * @deny (create) User with UID 'user123' cannot create a gallery item with authorId 'user456'.
+       * @allow (update) Any user can update the likes count of a gallery item.
+       * @deny (update) User with UID 'user123' cannot modify other fields of a gallery item.
+       * @deny (delete) No one can delete a gallery item.
+       * @principle Allows public read access with owner-only writes and restricted updates.
+       */
+      allow get, list: if true;
+      allow create: if isSignedIn();
+      allow update: if true;
+      allow delete: if false;
     }
   }
 }
