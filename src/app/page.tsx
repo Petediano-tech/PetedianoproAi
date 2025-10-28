@@ -63,12 +63,11 @@ function AdminLoginDialog() {
 
   const handleLogin = () => {
     setIsLoading(true);
-    // Simulate a check
     setTimeout(() => {
-      if (accessCode === process.env.NEXT_PUBLIC_ADMIN_ACCESS_CODE) {
+      // Hardcoded admin access code as per user request.
+      // In a real-world scenario, this should be an environment variable.
+      if (accessCode === "24512689") {
         toast({ title: "Access Granted", description: "Welcome, Admin!" });
-        // Store a simple session flag.
-        // NOTE: This is not secure for production but matches the request for a simple password.
         if (typeof window !== 'undefined') {
             sessionStorage.setItem('isAdmin', 'true');
         }
@@ -117,9 +116,15 @@ export default function HomePage() {
           </Link>
           <div className="flex items-center gap-2">
             <ModeToggle />
+            <Link href="/login">
+                <Button variant="ghost">Login</Button>
+            </Link>
+            <Link href="/signup">
+                <Button>Sign Up</Button>
+            </Link>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button>Admin Login</Button>
+                <Button variant="outline">Admin Login</Button>
               </AlertDialogTrigger>
               <AdminLoginDialog />
             </AlertDialog>
@@ -137,15 +142,11 @@ export default function HomePage() {
               Unleash your creativity with a suite of powerful AI tools designed by Peter Damiano. Edit photos, generate content, analyze files, and much more, all in one professional application.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4">
-               <AlertDialog>
-                <AlertDialogTrigger asChild>
-                   <Button size="lg" className="w-full sm:w-auto">
-                    Admin Access <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AdminLoginDialog />
-              </AlertDialog>
-
+               <Link href="/signup">
+                <Button size="lg" className="w-full sm:w-auto">
+                    Get Started For Free <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
               <Link href="/contact">
                 <Button size="lg" variant="outline" className="w-full sm:w-auto">
                   Contact Me

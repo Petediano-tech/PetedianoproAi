@@ -7,6 +7,7 @@ import { OnlineStatusProvider } from '@/context/OnlineStatusProvider';
 import { FontProvider } from '@/components/providers/FontProvider';
 import { AccessibilityProvider } from '@/context/AccessibilityProvider';
 import { AVAILABLE_FONTS } from '@/lib/fonts.config';
+import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
   title: 'Petediano Pro',
@@ -48,6 +49,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
         >
+          <FirebaseClientProvider>
             <FontProvider>
               <AccessibilityProvider>
                 <OnlineStatusProvider>
@@ -55,6 +57,7 @@ export default function RootLayout({
                 </OnlineStatusProvider>
               </AccessibilityProvider>
             </FontProvider>
+          </FirebaseClientProvider>
           <Toaster />
         </ThemeProvider>
       </body>

@@ -20,6 +20,9 @@ import { LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '@/components/icons/Logo';
 import { GlobalLoadingIndicator } from '@/components/layout/GlobalLoadingIndicator';
+import { useUser, useAuth } from '@/firebase';
+import { signOut } from 'firebase/auth';
+import { Loader2 } from 'lucide-react';
 
 export default function AppLayout({
   children,
@@ -27,20 +30,48 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
 
   useEffect(() => {
-    // This is a simple, insecure client-side check.
-    // For a real app, a proper JWT-based session is needed.
+    // This is a simple, insecure client-side check for admin.
     const isAdmin = sessionStorage.getItem('isAdmin') === 'true';
-    if (!isAdmin) {
-      router.replace('/');
+
+    // During the initial auth state check, don't redirect yet.
+    if (isUserLoading) {
+      return;
     }
-  }, [router]);
+
+    // If not admin and not a regular logged-in user, redirect to login.
+    if (!isAdmin && !user) {
+      router.replace('/login');
+    }
+  }, [user, isUserLoading, router]);
 
   const handleLogout = () => {
-    sessionStorage.removeItem('isAdmin');
-    router.push('/');
+    if (sessionStorage.getItem('isAdmin') === 'true') {
+        sessionStorage.removeItem('isAdmin');
+        router.push('/');
+    } else {
+        signOut(auth).then(() => {
+            router.push('/');
+        });
+    }
   };
+
+  // Show a loading screen while we verify the user's session.
+  if (isUserLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // If we've confirmed the user is not authenticated, render null to prevent flicker before redirect.
+  if (!user && !(sessionStorage.getItem('isAdmin') === 'true')) {
+    return null;
+  }
 
   return (
     <SidebarProvider defaultOpen>
