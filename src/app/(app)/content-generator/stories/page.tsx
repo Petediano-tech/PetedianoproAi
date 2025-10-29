@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, Sparkles, BookOpen, Download, Loader2, Copy, ImageIcon, BookText, Share2 } from "lucide-react";
+import { FileText, Sparkles, BookOpen, Loader2, Copy, ImageIcon, BookText, Share2 } from "lucide-react";
 import Image from "next/image";
 import { 
   generateStoryText, type GenerateStoryTextInput,
@@ -15,7 +15,6 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playNotificationSound } from '@/utils/audioPlayer';
-import jsPDF from 'jspdf';
 import { useFirestore } from '@/firebase';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { collection, serverTimestamp } from 'firebase/firestore';
@@ -39,7 +38,6 @@ export default function StoryGeneratorPage() {
 
   const [isStoryLoading, setIsStoryLoading] = useState(false);
   const [isBatchImageLoading, setIsBatchImageLoading] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
   
   const { soundSettings } = useSoundSettings();
   const firestore = useFirestore();
@@ -123,88 +121,6 @@ export default function StoryGeneratorPage() {
   };
 
 
-  const handleDownloadPdf = async () => {
-    if (!story) return;
-    setIsDownloading(true);
-    toast({ title: "Preparing PDF...", description: "This may take a moment." });
-
-    try {
-      const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const margin = 15;
-      const maxLineWidth = pageWidth - margin * 2;
-      let y = margin;
-
-      doc.setFontSize(22);
-      doc.setFont('helvetica', 'bold');
-      const titleLines = doc.splitTextToSize(story.title, maxLineWidth);
-      doc.text(titleLines, pageWidth / 2, y, { align: 'center' });
-      y += (doc.getTextDimensions(titleLines).h) + 10;
-      doc.setFont('helvetica', 'normal');
-
-      for (const page of story.pages) {
-         if (y > margin) {
-            y += 5;
-            if (y > pageHeight - margin) {
-                doc.addPage();
-                y = margin;
-            }
-        }
-        
-        if (page.imageUrl) {
-          try {
-            const img = new window.Image();
-            img.crossOrigin = "anonymous";
-            
-            await new Promise((resolve, reject) => {
-              img.onload = resolve;
-              img.onerror = (err) => reject(new Error(`Image failed to load: ${err}`));
-              img.src = page.imageUrl!;
-            });
-            
-            const imgProps = doc.getImageProperties(img);
-            const imgHeight = (imgProps.height * maxLineWidth) / imgProps.width;
-
-            if (y + imgHeight > pageHeight - margin) {
-              doc.addPage();
-              y = margin;
-            }
-            doc.addImage(page.imageUrl, 'PNG', margin, y, maxLineWidth, imgHeight);
-            y += imgHeight + 10;
-          } catch (e) {
-            console.error("Could not add image to PDF", e);
-             if (y + 10 > pageHeight - margin) { doc.addPage(); y = margin; }
-            doc.setFontSize(10);
-            doc.setTextColor(150);
-            doc.text("[Image could not be loaded]", margin, y);
-            y += 10;
-            doc.setTextColor(0);
-          }
-        }
-        
-        doc.setFontSize(12);
-        const textLines = doc.splitTextToSize(page.text, maxLineWidth);
-        const textHeight = doc.getTextDimensions(textLines).h;
-        
-        if (y + textHeight > pageHeight - margin) {
-            doc.addPage();
-            y = margin;
-        }
-        doc.text(textLines, margin, y);
-        y += textHeight + 5;
-      }
-      
-      const safeTitle = story.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-      doc.save(`${safeTitle || 'ai_story'}.pdf`);
-    } catch (error) {
-      console.error("Failed to generate PDF:", error);
-      toast({ title: "PDF Error", description: "Could not generate the PDF. " + (error as Error).message, variant: "destructive" });
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-  
   const handleCopyStory = () => {
       if (!story) return;
       const fullText = story.title + "\n\n" + story.pages.map(p => p.text).join("\n\n");
@@ -293,15 +209,11 @@ export default function StoryGeneratorPage() {
                   ))}
                 </ScrollArea>
                 <CardFooter className="flex flex-wrap gap-2 justify-center pt-4 border-t">
-                   <Button onClick={handleShareToCommunity} variant="outline" disabled={isDownloading}>
+                   <Button onClick={handleShareToCommunity} variant="outline">
                     <Share2 className="mr-2 h-4 w-4" /> Share to Community
                   </Button>
-                  <Button onClick={handleCopyStory} variant="outline" disabled={isDownloading}>
+                  <Button onClick={handleCopyStory} variant="outline">
                     <Copy className="mr-2 h-4 w-4" /> Copy Story Text
-                  </Button>
-                  <Button onClick={handleDownloadPdf} disabled={isDownloading}>
-                    {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                    {isDownloading ? 'Generating PDF...' : 'Download as PDF'}
                   </Button>
                 </CardFooter>
               </div>

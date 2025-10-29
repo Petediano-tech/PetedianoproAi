@@ -9,8 +9,6 @@ import { X, Circle, Bot, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
 import { playWinSound } from '@/utils/audioPlayer';
-import Confetti from 'react-confetti';
-import { useWindowSize } from '@/hooks/useWindowSize';
 
 type Player = 'X' | 'O';
 type SquareValue = Player | null;
@@ -66,8 +64,6 @@ export default function TicTacToeGame() {
   const isDraw = !winnerInfo && squares.every(square => square !== null);
 
   const { soundSettings } = useSoundSettings();
-  const { width, height } = useWindowSize();
-  const [showConfetti, setShowConfetti] = useState(false);
 
   const computerMove = useCallback((currentSquares: SquareValue[]) => {
     const emptySquares = currentSquares.map((sq, i) => sq === null ? i : null).filter(i => i !== null) as number[];
@@ -130,15 +126,11 @@ export default function TicTacToeGame() {
   useEffect(() => {
     if (winnerInfo && mode === 'computer' && winnerInfo.player === playerSymbol) {
         playWinSound(soundSettings);
-        setShowConfetti(true);
-        const timer = setTimeout(() => setShowConfetti(false), 5000);
-        return () => clearTimeout(timer);
     }
   }, [winnerInfo, mode, playerSymbol, soundSettings]);
 
   const handleStartGame = () => {
     setSquares(Array(9).fill(null));
-    setShowConfetti(false);
     
     let firstTurnIsX = true;
     if (mode === 'computer') {
@@ -151,7 +143,6 @@ export default function TicTacToeGame() {
   const handleReset = () => {
     setGameStarted(false);
     setSquares(Array(9).fill(null));
-    setShowConfetti(false);
   };
 
   const handleClick = (i: number) => {
@@ -199,7 +190,7 @@ export default function TicTacToeGame() {
             {mode === 'computer' && (
                  <div className="flex flex-col items-center gap-2">
                     <Label>Difficulty</Label>
-                    <RadioGroup value={difficulty} onValueChange={(v: any) => setDifficulty(v)} className="flex gap-4">
+                    <RadioGroup value={difficulty} onValueadeChange={(v: any) => setDifficulty(v)} className="flex gap-4">
                        <div className="flex items-center space-x-2"><RadioGroupItem value="simple" id="d-simple" /><Label htmlFor="d-simple">Simple</Label></div>
                        <div className="flex items-center space-x-2"><RadioGroupItem value="moderate" id="d-moderate" /><Label htmlFor="d-moderate">Moderate</Label></div>
                        <div className="flex items-center space-x-2"><RadioGroupItem value="hard" id="d-hard" /><Label htmlFor="d-hard">Hard</Label></div>
@@ -213,7 +204,6 @@ export default function TicTacToeGame() {
 
   return (
     <div className="flex flex-col items-center gap-4 relative">
-       {showConfetti && width && height && <Confetti width={width} height={height} recycle={false} />}
       <div className={cn("text-2xl font-bold font-headline mb-4 transition-colors", winnerInfo && "text-green-500", (winnerInfo && winnerInfo.player === computerSymbol) && "text-destructive")}>
         {status}
       </div>
