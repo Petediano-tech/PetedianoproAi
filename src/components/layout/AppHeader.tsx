@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, LogOut, Settings, User } from 'lucide-react';
 import { Logo } from '@/components/icons/Logo';
-import { ModeToggle } from '@/components/ModeToggle';
 import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
@@ -62,7 +61,6 @@ export function AppHeader() {
         </div>
         
         <div className="flex items-center gap-2">
-          <ModeToggle />
           <Link href="/settings">
              <Button variant="ghost" size="icon" aria-label="Settings">
                 <Settings className="h-5 w-5" />
