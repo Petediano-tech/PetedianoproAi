@@ -1,4 +1,3 @@
-
 import {
   Accordion,
   AccordionContent,
@@ -9,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Logo } from "@/components/icons/Logo";
-import { ModeToggle } from "@/components/ModeToggle";
 
 const faqs = [
   {
@@ -59,7 +57,6 @@ export default function FAQPage() {
             <Logo className="h-8 w-auto" />
           </Link>
           <div className="flex items-center gap-2">
-            <ModeToggle />
             <Link href="/login">
               <Button variant="ghost">Login</Button>
             </Link>
