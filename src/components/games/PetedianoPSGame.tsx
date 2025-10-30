@@ -190,7 +190,7 @@ export default function TicTacToeGame() {
             {mode === 'computer' && (
                  <div className="flex flex-col items-center gap-2">
                     <Label>Difficulty</Label>
-                    <RadioGroup value={difficulty} onValueadeChange={(v: any) => setDifficulty(v)} className="flex gap-4">
+                    <RadioGroup value={difficulty} onValueChange={(v: any) => setDifficulty(v)} className="flex gap-4">
                        <div className="flex items-center space-x-2"><RadioGroupItem value="simple" id="d-simple" /><Label htmlFor="d-simple">Simple</Label></div>
                        <div className="flex items-center space-x-2"><RadioGroupItem value="moderate" id="d-moderate" /><Label htmlFor="d-moderate">Moderate</Label></div>
                        <div className="flex items-center space-x-2"><RadioGroupItem value="hard" id="d-hard" /><Label htmlFor="d-hard">Hard</Label></div>
