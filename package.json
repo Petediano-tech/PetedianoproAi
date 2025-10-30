@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack -p 9002",
-    "build": "NODE_OPTIONS=--max-old-space-size=4096 next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
@@ -74,4 +74,3 @@
     "typescript": "^5"
   }
 }
-    
