@@ -21,3 +21,4 @@ This is a Next.js application built with Firebase Studio. It is an all-in-one AI
 
 To get started, explore the code in `src/app/`.
 # PetedianoproAi
+# PetedianoproAi
