@@ -111,13 +111,13 @@ function Section({ title, features }: SectionProps) {
               <CardDescription className="pt-2">{feature.description}</CardDescription>
             </CardHeader>
             <CardContent className="flex-grow" />
-            <CardContent>
+            <CardFooter>
               <Link href={feature.href}>
                 <Button className="w-full">
                   Go to {feature.title} <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
-            </CardContent>
+            </CardFooter>
           </Card>
         ))}
       </div>

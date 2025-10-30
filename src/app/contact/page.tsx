@@ -1,6 +1,7 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, MessageCircle, PhoneCall, Share2 } from "lucide-react"; // Using MessageCircle for WhatsApp/SMS
+import { Mail, MessageCircle, PhoneCall } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/icons/Logo";
 
@@ -56,7 +57,7 @@ export default function ContactPage() {
                 {contactMethods.map((method) => (
                   <div key={method.label} className="flex items-center gap-4 p-4 border rounded-lg bg-secondary/20 hover:bg-secondary/40 transition-colors">
                     {method.icon}
-                    <div className="min-w-0 flex-1"> {/* Added min-w-0 and flex-1 here for better flex behavior */}
+                    <div className="min-w-0 flex-1">
                       <p className="font-semibold">{method.label}</p>
                       <Link href={method.href} target="_blank" rel="noopener noreferrer" className="text-foreground hover:underline break-all">
                         {method.value}
@@ -71,13 +72,13 @@ export default function ContactPage() {
               <h2 className="font-headline text-2xl text-accent mb-4">Follow on Social Media</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {socialLinks.map((social) => (
-                  <Link key={social.label} href={social.href} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" className="w-full h-auto py-4 flex flex-col items-center justify-center gap-2 text-center hover:bg-accent hover:text-accent-foreground transition-colors">
+                   <Button key={social.label} variant="outline" asChild className="w-full h-auto py-4 flex flex-col items-center justify-center gap-2 text-center hover:bg-accent hover:text-accent-foreground group transition-colors">
+                    <Link href={social.href} target="_blank" rel="noopener noreferrer">
                       {social.icon}
                       <span className="font-semibold">{social.label}</span>
                       <span className="text-xs text-muted-foreground group-hover:text-accent-foreground">{social.username}</span>
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 ))}
               </div>
             </section>

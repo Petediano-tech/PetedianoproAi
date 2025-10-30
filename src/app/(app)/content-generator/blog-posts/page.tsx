@@ -33,8 +33,8 @@ export default function BlogPostWriterPage() {
   const { soundSettings } = useSoundSettings();
 
   const handleGeneratePost = async () => {
-    if (!topic || !targetAudience || !tone || !desiredLength) {
-      toast({ title: "Missing Fields", description: "Please fill in Topic, Target Audience, Tone, and Desired Length.", variant: "destructive" });
+    if (!topic || !targetAudience) {
+      toast({ title: "Missing Fields", description: "Please provide a topic and target audience.", variant: "destructive" });
       return;
     }
 
@@ -44,29 +44,29 @@ export default function BlogPostWriterPage() {
     
     const progressInterval = setInterval(() => {
         setProgressValue(prev => Math.min(prev + 5, 90));
-    }, 800);
+    }, 700);
 
     try {
       const input: GenerateBlogPostInput = { 
-          topic, 
-          keywords: keywords || undefined, 
-          targetAudience, 
-          tone: tone as GenerateBlogPostInput['tone'], 
-          desiredLength: desiredLength as GenerateBlogPostInput['desiredLength'], 
-          customInstructions: customInstructions || undefined
+        topic, 
+        keywords, 
+        targetAudience, 
+        tone: tone as GenerateBlogPostInput['tone'],
+        desiredLength: desiredLength as GenerateBlogPostInput['desiredLength'], 
+        customInstructions 
       };
       const result = await generateBlogPost(input);
       setGeneratedPost(result);
       toast({ title: "Success", description: "Blog post generated successfully!" });
       playNotificationSound(soundSettings);
     } catch (error) {
-        console.error("Error generating blog post:", error);
-        toast({ title: "Error", description: "Failed to generate post. " + (error as Error).message, variant: "destructive" });
+      console.error("Error generating blog post:", error);
+      toast({ title: "Error", description: "Failed to generate blog post. " + (error as Error).message, variant: "destructive" });
     } finally {
-        clearInterval(progressInterval);
-        setProgressValue(100);
-        setIsLoading(false);
-        setTimeout(() => setProgressValue(0), 1500);
+      clearInterval(progressInterval);
+      setProgressValue(100);
+      setIsLoading(false);
+      setTimeout(() => setProgressValue(0), 1500);
     }
   };
 
@@ -184,7 +184,7 @@ export default function BlogPostWriterPage() {
               <Label htmlFor="customInstructions">Custom Instructions (Optional)</Label>
               <Textarea id="customInstructions" placeholder="e.g., Include a section on policy changes. Avoid jargon." value={customInstructions} onChange={(e) => setCustomInstructions(e.target.value)} rows={3} />
             </div>
-            <Button onClick={handleGeneratePost} disabled={isLoading} className="w-full">
+            <Button onClick={handleGeneratePost} disabled={isLoading || !topic || !targetAudience} className="w-full">
               <Sparkles className="mr-2 h-5 w-5" /> {isLoading ? "Writing Article..." : "Write Article"}
             </Button>
             {isLoading && <Progress value={progressValue} className="w-full mt-2" />}
@@ -262,4 +262,3 @@ export default function BlogPostWriterPage() {
     </div>
   );
 }
-    
