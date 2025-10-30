@@ -1,6 +1,6 @@
 
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -48,25 +48,25 @@ export default function BlogPostWriterPage() {
 
     try {
       const input: GenerateBlogPostInput = { 
-        topic, 
-        keywords,
-        targetAudience, 
-        tone: tone as GenerateBlogPostInput['tone'], 
-        desiredLength: desiredLength as GenerateBlogPostInput['desiredLength'],
-        customInstructions
+          topic, 
+          keywords: keywords || undefined, 
+          targetAudience, 
+          tone: tone as GenerateBlogPostInput['tone'], 
+          desiredLength: desiredLength as GenerateBlogPostInput['desiredLength'], 
+          customInstructions: customInstructions || undefined
       };
       const result = await generateBlogPost(input);
       setGeneratedPost(result);
       toast({ title: "Success", description: "Blog post generated successfully!" });
       playNotificationSound(soundSettings);
     } catch (error) {
-      console.error("Error generating blog post:", error);
-      toast({ title: "Error", description: "Failed to generate post. " + (error as Error).message, variant: "destructive" });
+        console.error("Error generating blog post:", error);
+        toast({ title: "Error", description: "Failed to generate post. " + (error as Error).message, variant: "destructive" });
     } finally {
-      clearInterval(progressInterval);
-      setProgressValue(100);
-      setIsLoading(false);
-      setTimeout(() => setProgressValue(0), 1500);
+        clearInterval(progressInterval);
+        setProgressValue(100);
+        setIsLoading(false);
+        setTimeout(() => setProgressValue(0), 1500);
     }
   };
 
@@ -89,15 +89,21 @@ export default function BlogPostWriterPage() {
   };
 
   const handleCopyPost = () => {
+    if (!generatedPost) {
+        toast({ title: "Unavailable", description: "Please generate a post first.", variant: "destructive" });
+        return;
+    }
     const postText = formatPostToText(generatedPost);
-    if (!postText) return;
     navigator.clipboard.writeText(postText)
       .then(() => toast({ title: "Copied!", description: "Blog post copied to clipboard." }))
       .catch(() => toast({ title: "Error", description: "Failed to copy post.", variant: "destructive" }));
   };
 
   const handleDownloadPost = (format: 'txt' | 'json' | 'md') => {
-    if (!generatedPost) return;
+    if (!generatedPost) {
+        toast({ title: "Unavailable", description: "Please generate a post first.", variant: "destructive" });
+        return;
+    }
     let data = "";
     let fileExtension = format;
     let mimeType = "text/plain";
@@ -106,18 +112,13 @@ export default function BlogPostWriterPage() {
       data = JSON.stringify(generatedPost, null, 2);
       mimeType = "application/json";
     } else if (format === 'md') {
-      data = `# ${generatedPost.blogTitle}\n\n**Introduction:**\n${generatedPost.introduction}\n\n`;
-      generatedPost.mainContent.forEach(section => {
+       data = `# ${generatedPost.blogTitle}\n\n`;
+       data += `**Introduction:**\n${generatedPost.introduction}\n\n`;
+       generatedPost.mainContent.forEach(section => {
         data += `## ${section.headingText}\n\n`;
         section.paragraphs.forEach(p => data += `${p}\n\n`);
       });
-      data += `**Conclusion:**\n${generatedPost.conclusion}\n\n`;
-      if (generatedPost.suggestedMetaDescription) {
-        data += `**Meta Description:** ${generatedPost.suggestedMetaDescription}\n\n`;
-      }
-      if (generatedPost.suggestedTags && generatedPost.suggestedTags.length > 0) {
-        data += `**Tags:** ${generatedPost.suggestedTags.map(t => `\`${t}\``).join(' ')}\n`;
-      }
+       data += `### Conclusion\n\n${generatedPost.conclusion}\n`;
        mimeType = "text/markdown";
     } else { // txt
       data = formatPostToText(generatedPost);
@@ -181,7 +182,7 @@ export default function BlogPostWriterPage() {
             </div>
             <div>
               <Label htmlFor="customInstructions">Custom Instructions (Optional)</Label>
-              <Textarea id="customInstructions" placeholder="e.g., Include a section on policy changes. Avoid jargon." value={customInstructions} onChange={(e) => setCustomInstructions(e.target.value)} rows={3}/>
+              <Textarea id="customInstructions" placeholder="e.g., Include a section on policy changes. Avoid jargon." value={customInstructions} onChange={(e) => setCustomInstructions(e.target.value)} rows={3} />
             </div>
             <Button onClick={handleGeneratePost} disabled={isLoading} className="w-full">
               <Sparkles className="mr-2 h-5 w-5" /> {isLoading ? "Writing Article..." : "Write Article"}
@@ -208,56 +209,52 @@ export default function BlogPostWriterPage() {
               </div>
             )}
             {generatedPost && (
-              <ScrollArea className="h-[calc(100vh-22rem)] p-1 prose dark:prose-invert max-w-none">
-                <div className="space-y-6">
-                  <h1 className="font-headline text-3xl text-primary !mb-2">{generatedPost.blogTitle}</h1>
-                  
-                  <div className="mb-4 p-4 bg-secondary/20 rounded-md">
-                      <h2 className="font-headline text-xl text-accent !mt-0 !mb-1">Introduction</h2>
-                      <p className="!my-0">{generatedPost.introduction}</p>
-                  </div>
-                  
-                  {generatedPost.mainContent.map((section: HeadingSection, index: number) => (
-                    <div key={index} className="mb-4">
-                      <h2 className="font-headline text-xl text-accent !mt-0 !mb-1">{section.headingText}</h2>
-                      {section.paragraphs.map((p, pIndex) => <p key={pIndex} className="!my-2">{p}</p>)}
-                    </div>
-                  ))}
-                  
-                  <div className="mt-4 p-4 bg-secondary/20 rounded-md">
-                    <h2 className="font-headline text-xl text-accent !mt-0 !mb-1">Conclusion</h2>
-                    <p className="!my-0">{generatedPost.conclusion}</p>
-                  </div>
-
-                  {generatedPost.suggestedMetaDescription && (
-                    <div className="mt-4 text-sm">
-                        <strong className="font-semibold text-primary">Meta Description:</strong> {generatedPost.suggestedMetaDescription}
-                    </div>
-                  )}
-                  {generatedPost.suggestedTags && generatedPost.suggestedTags.length > 0 && (
-                     <div className="mt-2 text-sm">
-                        <strong className="font-semibold text-primary">Suggested Tags:</strong>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                            {generatedPost.suggestedTags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
+                <ScrollArea className="h-[calc(100vh-22rem)] p-1">
+                    <div className="space-y-6">
+                        <h2 className="font-headline text-3xl text-center text-accent !mb-2">{generatedPost.blogTitle}</h2>
+                        <Card className="bg-secondary/20">
+                            <CardHeader><CardTitle className="font-headline text-lg !mt-0 !mb-1">Introduction</CardTitle></CardHeader>
+                            <CardContent><p className="text-sm !my-0">{generatedPost.introduction}</p></CardContent>
+                        </Card>
+                        
+                        <div>
+                          <h3 className="font-headline text-xl text-primary mb-3">Main Content</h3>
+                           <div className="space-y-4">
+                            {generatedPost.mainContent.map((section: HeadingSection, index: number) => (
+                               <Card key={index} className="bg-card border shadow-sm">
+                                  <CardHeader><CardTitle className="text-lg font-semibold">{section.headingText}</CardTitle></CardHeader>
+                                  <CardContent className="space-y-2 text-sm">
+                                    {section.paragraphs.map((p, i) => <p key={i}>{p}</p>)}
+                                  </CardContent>
+                               </Card>
+                            ))}
+                           </div>
                         </div>
+
+                        <Card className="bg-secondary/20">
+                            <CardHeader><CardTitle className="font-headline text-lg !mt-0 !mb-1">Conclusion</CardTitle></CardHeader>
+                            <CardContent><p className="text-sm !my-0">{generatedPost.conclusion}</p></CardContent>
+                        </Card>
+
+                        {(generatedPost.suggestedMetaDescription || (generatedPost.suggestedTags && generatedPost.suggestedTags.length > 0)) && (
+                            <Card className="bg-secondary/20">
+                                <CardHeader><CardTitle className="font-headline text-lg !mt-0 !mb-1">SEO Suggestions</CardTitle></CardHeader>
+                                <CardContent className="space-y-2 text-sm !my-0">
+                                    {generatedPost.suggestedMetaDescription && <p><strong>Meta Description:</strong> {generatedPost.suggestedMetaDescription}</p>}
+                                    {generatedPost.suggestedTags && generatedPost.suggestedTags.length > 0 && (
+                                        <div><strong>Tags:</strong> <div className="flex flex-wrap gap-2 mt-1">{generatedPost.suggestedTags.map(tag => <Badge key={tag} variant="secondary"><Tag className="mr-1 h-3 w-3"/>{tag}</Badge>)}</div></div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )}
+                        <CardFooter className="justify-center pt-6 border-t gap-2 !mt-8 !px-0">
+                            <Button variant="outline" onClick={handleCopyPost}><Copy className="mr-2 h-4 w-4" /> Copy Text</Button>
+                            <Button variant="outline" onClick={() => handleDownloadPost('txt')}><Download className="mr-2 h-4 w-4" /> TXT</Button>
+                            <Button variant="outline" onClick={() => handleDownloadPost('md')}><Download className="mr-2 h-4 w-4" /> MD</Button>
+                            <Button variant="outline" onClick={() => handleDownloadPost('json')}><Download className="mr-2 h-4 w-4" /> JSON</Button>
+                        </CardFooter>
                     </div>
-                  )}
-                </div>
-                <CardFooter className="justify-center pt-6 border-t gap-2 !mt-8 !px-0">
-                      <Button variant="outline" onClick={handleCopyPost}>
-                          <Copy className="mr-2 h-4 w-4" /> Copy Text
-                      </Button>
-                      <Button variant="outline" onClick={() => handleDownloadPost('txt')}>
-                          <Download className="mr-2 h-4 w-4" /> Download TXT
-                      </Button>
-                       <Button variant="outline" onClick={() => handleDownloadPost('md')}>
-                          <Download className="mr-2 h-4 w-4" /> Download MD
-                      </Button>
-                      <Button variant="outline" onClick={() => handleDownloadPost('json')}>
-                          <Download className="mr-2 h-4 w-4" /> Download JSON
-                      </Button>
-                  </CardFooter>
-              </ScrollArea>
+                </ScrollArea>
             )}
           </CardContent>
         </Card>
@@ -265,3 +262,4 @@ export default function BlogPostWriterPage() {
     </div>
   );
 }
+    

@@ -238,7 +238,8 @@
           ]
         }
       }
-    ],
-    "reasoning": "The Firestore structure is designed to be simple and secure. The `galleryItems` collection is a top-level collection to allow for easy querying by all users. Security rules will govern access: all users can read the gallery items, but creation requires specific fields and updates are limited to incrementing likes, preventing unauthorized modifications."
+    ]
   }
 }
+
+    

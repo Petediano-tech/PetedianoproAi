@@ -64,29 +64,34 @@ export default function AssistantPage() {
     setIsLoading(true);
 
     try {
-      const input: PeteAiAssistantInput = { query: userMessage.text };
-      const result: PeteAiAssistantOutput = await peteAiAssistant(input);
-      
-      const aiMessage: Message = {
-        id: Date.now().toString() + "-peteai",
-        text: result.response,
-        sender: "peteai",
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, aiMessage]);
-      playNotificationSound(soundSettings); 
+        const input: PeteAiAssistantInput = { query };
+        const result: PeteAiAssistantOutput = await peteAiAssistant(input);
+        
+        const aiMessage: Message = {
+            id: Date.now().toString() + "-peteai",
+            text: result.response,
+            sender: "peteai",
+            timestamp: new Date(),
+        };
+        playNotificationSound(soundSettings);
+        setMessages(prev => [...prev, aiMessage]);
+
     } catch (error) {
-      console.error("Error with PeteAI Assistant:", error);
-      toast({ title: "Error", description: "PeteAI Assistant is currently unavailable. " + (error as Error).message, variant: "destructive" });
-      const errorMessage: Message = {
-        id: Date.now().toString() + "-error",
-        text: "Sorry, I encountered an error. Please try again.",
-        sender: "peteai",
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, errorMessage]);
+        console.error("Error calling PeteAI Assistant:", error);
+        const errorMessage: Message = {
+            id: Date.now().toString() + "-error",
+            text: "Sorry, I encountered an error. Please try again. " + (error as Error).message,
+            sender: "peteai",
+            timestamp: new Date(),
+        };
+        toast({
+            title: "Assistant Error",
+            description: "Could not get a response from the AI assistant.",
+            variant: "destructive"
+        });
+        setMessages(prev => [...prev, errorMessage]);
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
   };
   
@@ -148,7 +153,7 @@ export default function AssistantPage() {
                   )}
                 </div>
               ))}
-              {isLoading && (
+              {isLoading && messages[messages.length -1]?.sender === 'user' && (
                 <div className="flex items-end gap-2 justify-start">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src="https://placehold.co/100x100/9C27B0/FFFFFF.png?text=PA" alt="PeteAI" data-ai-hint="robot avatar"/>
@@ -167,7 +172,7 @@ export default function AssistantPage() {
             <Textarea
               ref={textareaRef}
               rows={1}
-              placeholder="Type your message to PeteAI... (Shift+Enter for new line)"
+              placeholder="Ask PeteAI anything..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -184,3 +189,4 @@ export default function AssistantPage() {
     </div>
   );
 }
+    
