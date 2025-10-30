@@ -10,6 +10,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const GetMotivationalQuoteInputSchema = z.object({
@@ -41,9 +42,10 @@ export async function getMotivationalQuote(
 
 const quotePrompt = ai.definePrompt({
   name: 'quotePrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: GetMotivationalQuoteInputSchema},
-  output: {schema: GetMotivationalQuoteOutputSchema},
-  prompt: `You are a motivational quote generator. Generate an original motivational quote.  The topic of the quote should be related to {{topic}}.
+  output: {schema: z.object({ quote: z.string() })},
+  prompt: `You are a motivational quote generator. Generate an original motivational quote. The topic of the quote should be related to {{topic}}.
 
   Quote:`,
   config: {
@@ -66,7 +68,7 @@ const getMotivationalQuoteFlow = ai.defineFlow(
     } else {
       // If textOnly is false, generate an image with the quote.
       const {media} = await ai.generate({
-        model: 'googleai/imagen-4.0-fast-generate-001',
+        model: googleAI.model('imagen-4.0-fast-generate-001'),
         prompt: `Generate an image with the following motivational quote on a beautiful, artistic background: "${output!.quote}"`,
       });
       if (!media || !media.url) {

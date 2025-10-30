@@ -9,6 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const SocialPlatformEnum = z.enum(['Instagram', 'X (Twitter)', 'Facebook', 'LinkedIn', 'TikTok', 'YouTube Shorts']);
@@ -50,6 +51,7 @@ export async function generateSocialCampaign(input: GenerateSocialCampaignInput)
 
 const socialCampaignPrompt = ai.definePrompt({
   name: 'generateSocialCampaignPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: GenerateSocialCampaignInputSchema},
   output: {schema: GenerateSocialCampaignOutputSchema},
   prompt: `You are an expert social media marketing strategist.
@@ -102,5 +104,3 @@ const generateSocialCampaignFlow = ai.defineFlow(
     return output!;
   }
 );
-
-    

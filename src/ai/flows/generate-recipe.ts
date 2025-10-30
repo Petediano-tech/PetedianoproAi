@@ -9,6 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const GenerateRecipeInputSchema = z.object({
@@ -35,6 +36,7 @@ export async function generateRecipe(input: GenerateRecipeInput): Promise<Genera
 
 const recipePrompt = ai.definePrompt({
   name: 'generateRecipePrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: GenerateRecipeInputSchema},
   output: {schema: GenerateRecipeOutputSchema},
   prompt: `You are a creative chef. Generate a complete recipe based on the following user inputs.

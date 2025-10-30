@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview AI-powered photo enhancement flow.
@@ -8,6 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const AiPhotoEnhancerInputSchema = z.object({
@@ -35,6 +37,7 @@ export async function aiPhotoEnhancer(input: AiPhotoEnhancerInput): Promise<AiPh
 
 const prompt = ai.definePrompt({
   name: 'aiPhotoEnhancerPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: AiPhotoEnhancerInputSchema},
   output: {schema: AiPhotoEnhancerOutputSchema},
   prompt: `You are a professional photo enhancer. You will take a photo and enhance it automatically by adjusting brightness, contrast, blur, texture, color grading, blend, PIP, and overlay.

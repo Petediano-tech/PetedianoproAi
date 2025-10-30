@@ -9,6 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const DayPlanSchema = z.object({
@@ -37,6 +38,7 @@ export async function generateTripPlan(input: GenerateTripPlanInput): Promise<Ge
 
 const tripPlanPrompt = ai.definePrompt({
   name: 'generateTripPlanPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: GenerateTripPlanInputSchema},
   output: {schema: GenerateTripPlanOutputSchema},
   prompt: `You are an expert travel agent. Create a detailed, day-by-day itinerary for a trip based on the user's preferences.

@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -9,6 +10,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const AnalyzeUploadedFileInputSchema = z.object({
@@ -37,6 +39,7 @@ export async function analyzeUploadedFile(
 
 const analyzeUploadedFilePrompt = ai.definePrompt({
   name: 'analyzeUploadedFilePrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: AnalyzeUploadedFileInputSchema},
   output: {schema: AnalyzeUploadedFileOutputSchema},
   prompt: `You are an expert file analyst. You will analyze the given file and provide a description of its content, details on how it was generated or its source, and any text extracted from the file.

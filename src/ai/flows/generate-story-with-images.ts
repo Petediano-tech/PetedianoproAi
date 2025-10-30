@@ -8,6 +8,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 // --- SCHEMAS AND TYPES ---
@@ -43,6 +44,7 @@ export type GenerateStoryImageOutput = z.infer<typeof GenerateStoryImageOutputSc
 
 const storyOutlinePrompt = ai.definePrompt({
   name: 'storyOutlinePrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: {
     schema: GenerateStoryTextInputSchema,
   },
@@ -68,6 +70,7 @@ Generate a creative title and a list of scene descriptions.
 
 const storyPagePrompt = ai.definePrompt({
   name: 'storyPagePrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: { schema: z.object({
     topic: z.string().describe('The topic of the story.'),
     sceneDescription: z.string().describe('A description of the scene.'),
@@ -126,7 +129,7 @@ export async function generateStoryText(
  */
 export async function generateStoryImage(input: GenerateStoryImageInput): Promise<GenerateStoryImageOutput> {
     const {media} = await ai.generate({
-      model: 'googleai/imagen-4.0-fast-generate-001',
+      model: googleAI.model('imagen-4.0-fast-generate-001'),
       prompt: `Generate an illustration for a story. The scene is: "${input.imageDescription}". The image should be artistic and visually compelling.`,
     });
 

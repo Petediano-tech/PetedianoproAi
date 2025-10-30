@@ -8,6 +8,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 // --- SCHEMAS AND TYPES ---
@@ -43,6 +44,7 @@ export type MakeStoryChoiceOutput = StoryScene;
 
 const startStoryPrompt = ai.definePrompt({
   name: 'startInteractiveStoryPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: { schema: StartInteractiveStoryInputSchema },
   output: { schema: StorySceneSchema },
   prompt: `You are an interactive storyteller. Your goal is to create an engaging, branching narrative.
@@ -60,6 +62,7 @@ Provide a compelling narrative and two choices that lead to different paths. Als
 
 const continueStoryPrompt = ai.definePrompt({
   name: 'continueInteractiveStoryPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: { schema: MakeStoryChoiceInputSchema },
   output: { schema: StorySceneSchema },
   prompt: `You are an interactive storyteller continuing a branching narrative.

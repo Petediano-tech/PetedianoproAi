@@ -10,6 +10,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const GenerateOriginalPicturesInputSchema = z.object({
@@ -54,7 +55,7 @@ const generateOriginalPicturesFlow = ai.defineFlow(
     imagePrompt += " Avoid clichés and generate a unique visual.";
 
     const {media} = await ai.generate({
-      model: 'googleai/imagen-4.0-fast-generate-001',
+      model: googleAI.model('imagen-4.0-fast-generate-001'),
       prompt: imagePrompt,
     });
     if (!media || !media.url) {

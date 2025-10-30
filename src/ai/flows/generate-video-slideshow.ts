@@ -9,6 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import wav from 'wav';
 import { GenerateVideoSlideshowInputSchema, GenerateVideoSlideshowOutputSchema, type GenerateVideoSlideshowInput, type GenerateVideoSlideshowOutput } from './video-slideshow.types';
 
@@ -58,7 +59,7 @@ export async function generateVideoSlideshow(input: GenerateVideoSlideshowInput)
  */
 async function generateImageForSlide(imageDescription: string): Promise<{ imageUrl: string }> {
     const {media} = await ai.generate({
-      model: 'googleai/imagen-4.0-fast-generate-001',
+      model: googleAI.model('imagen-4.0-fast-generate-001'),
       prompt: `Generate a visually compelling, cinematic image for a video slideshow. The scene is: "${imageDescription}". Aspect ratio 16:9.`,
     });
 

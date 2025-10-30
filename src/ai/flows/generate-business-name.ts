@@ -9,6 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const GenerateBusinessNameInputSchema = z.object({
@@ -34,6 +35,7 @@ export async function generateBusinessName(input: GenerateBusinessNameInput): Pr
 
 const businessNamePrompt = ai.definePrompt({
   name: 'generateBusinessNamePrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: GenerateBusinessNameInputSchema},
   output: {schema: GenerateBusinessNameOutputSchema},
   prompt: `You are a branding expert specializing in creating unique and memorable business names.

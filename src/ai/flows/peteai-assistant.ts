@@ -10,6 +10,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const PeteAiAssistantInputSchema = z.object({
@@ -28,6 +29,7 @@ export async function peteAiAssistant(input: PeteAiAssistantInput): Promise<Pete
 
 const peteAiAssistantPrompt = ai.definePrompt({
   name: 'peteAiAssistantPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: PeteAiAssistantInputSchema},
   output: {schema: PeteAiAssistantOutputSchema},
   prompt: `You are PeteAI, the friendly and expert assistant for the Petediano Pro application. Your creator is Peter Damiano (also known as Petediano).

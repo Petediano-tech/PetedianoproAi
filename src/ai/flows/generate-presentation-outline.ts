@@ -9,6 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const SlideSchema = z.object({
@@ -43,6 +44,7 @@ export async function generatePresentationOutline(input: GeneratePresentationOut
 
 const presentationOutlinePrompt = ai.definePrompt({
   name: 'generatePresentationOutlinePrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: GeneratePresentationOutlineInputSchema},
   output: {schema: GeneratePresentationOutlineOutputSchema},
   prompt: `You are an expert presentation designer and content strategist.
@@ -94,5 +96,3 @@ const generatePresentationOutlineFlow = ai.defineFlow(
     return output!;
   }
 );
-
-    

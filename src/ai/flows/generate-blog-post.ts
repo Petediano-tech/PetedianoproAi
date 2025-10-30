@@ -9,6 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const HeadingSectionSchema = z.object({
@@ -43,6 +44,7 @@ export async function generateBlogPost(input: GenerateBlogPostInput): Promise<Ge
 
 const blogPostPrompt = ai.definePrompt({
   name: 'generateBlogPostPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: GenerateBlogPostInputSchema},
   output: {schema: GenerateBlogPostOutputSchema},
   prompt: `You are an expert blog post writer and SEO content strategist.

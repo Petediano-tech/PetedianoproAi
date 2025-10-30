@@ -9,6 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const GenerateImageCaptionInputSchema = z.object({
@@ -33,6 +34,7 @@ export async function generateImageCaption(input: GenerateImageCaptionInput): Pr
 
 const imageCaptionPrompt = ai.definePrompt({
   name: 'generateImageCaptionPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: GenerateImageCaptionInputSchema},
   output: {schema: GenerateImageCaptionOutputSchema},
   prompt: `You are a social media expert. Analyze the following image and generate creative captions and relevant hashtags.

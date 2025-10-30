@@ -9,6 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const LineExplanationSchema = z.object({
@@ -34,6 +35,7 @@ export async function explainCode(input: ExplainCodeInput): Promise<ExplainCodeO
 
 const explainCodePrompt = ai.definePrompt({
   name: 'explainCodePrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: ExplainCodeInputSchema},
   output: {schema: ExplainCodeOutputSchema},
   prompt: `You are an expert programmer and teacher. Your task is to explain a code snippet in simple, easy-to-understand terms.

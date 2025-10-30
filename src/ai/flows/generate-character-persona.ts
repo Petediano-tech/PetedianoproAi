@@ -9,6 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const GenerateCharacterPersonaInputSchema = z.object({
@@ -36,6 +37,7 @@ export async function generateCharacterPersona(input: GenerateCharacterPersonaIn
 
 const characterPersonaPrompt = ai.definePrompt({
   name: 'generateCharacterPersonaPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: GenerateCharacterPersonaInputSchema},
   output: {schema: GenerateCharacterPersonaOutputSchema},
   prompt: `You are an expert character creator and storyteller.

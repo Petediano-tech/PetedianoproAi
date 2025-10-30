@@ -9,6 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const ScenarioSchema = z.object({
@@ -39,6 +40,7 @@ export async function generateWhatIfScenario(input: GenerateWhatIfScenarioInput)
 
 const whatIfScenarioPrompt = ai.definePrompt({
   name: 'generateWhatIfScenarioPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: GenerateWhatIfScenarioInputSchema},
   output: {schema: GenerateWhatIfScenarioOutputSchema},
   prompt: `You are an expert historian, futurist, and speculative fiction writer.
